@@ -1,0 +1,7 @@
+<h1>Search all orders</h1>
+<%= start_form_tag :controller => 'orders', :action => 'search' %>
+  <input class="textInput" type="text" id="searchTerm" name="term" size="28" style="width:135px;float:left;margin-right:5px;" /> <%= submit_tag('Go', {:class => 'button fifty', :id => 'searchButton'}) %>
+  <div class="clear info">&nbsp;</div>
+  <span class="info">Order #, First or Last Name</span>
+
+<%= end_form_tag %>

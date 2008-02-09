@@ -1,0 +1,86 @@
+<!-- RIGHT -->
+<div id="right">
+	<h1>Tag This Product</h1>
+
+<script language="javascript" type="text/javascript">
+	// Called when closing the Tag edit dialog box
+	// Fires off a request for rendering the partial in our list box
+	function returnGetTags() {
+		// Update the table text and show loading message
+		var updateText = "<tr><td colspan='2'>";
+		updateText += "<img src='/engine_files/substruct/images/indicator.gif' />";
+		updateText += " Updating list, please wait...";
+		updateText += "</td></tr>";
+		Element.update($("tag_list_tbody"), updateText);
+		// Doing this in a settimeout seems to work best as the AJAX crap wasn't
+		// being fired off by the submodal code for some reason.
+		window.setTimeout("doRealReturn();", 1);
+	}
+	// The actual AJAX call to update our Tag rows.
+	// This happens from a settimeout because of the way executing it
+	// was malfunctioning from the subModal code.
+	function doRealReturn() {
+		//Element.update($("tag_list_tbody"), "<tr><td colspan=\"2\">Updating list...</td></tr>");
+		var opt = {
+		    // Send this lovely data
+		    parameters: 'id=<%= @product.id %>&partial_name=tag_list_form_row',
+		    // Handle successful response
+		    onSuccess: function(t) {
+					if (t.responseText == "" || t.responseText == " ") {
+						// Assume there are no tags?
+						var emptyText = "<tr><td colspan=\"2\">No tags have been created yet.</td></tr>";
+						Element.update($("tag_list_tbody"), emptyText);
+					} else {
+						Element.update($("tag_list_tbody"), t.responseText);
+					}
+		    },
+		    // Handle other errors
+		    onFailure: function(t) {
+		      alert('Error ' + t.status + ' -- ' + t.statusText);
+		    }
+		}
+		new Ajax.Request('/admin/products/get_tags', opt);
+	}
+</script>
+
+<p>
+	<a href="/admin/tags/list" onclick="showPopWin('/admin/tags/list', 400, 450, returnGetTags, false); return false;">Manage Tags</a> - <a href="http://dev.subimage.com/projects/substruct/wiki/HelpTagging" class="submodal-600-400 info">What are Tags?</a>
+</p>
+
+
+<!-- 
+	Empty tag to force updates even if no checkboxes are selected
+ -->
+<input type="hidden" value="" name="product[tags][]" />
+<div class="listContainer" style="height:300px;">
+	<table class="list" cellpadding="0" cellspacing="0">
+		<colgroup>
+			<col style="width:25px;" />
+			<col />
+		</colgroup>
+		<tr class="fixedHeader">
+			<th colspan="2">Tag Name</th>
+		</tr>
+		<tbody id="tag_list_tbody">
+		<% if @tags.length > 0 %>
+			<%= render(:partial => 'tag_list_form_row', :collection => @tags, :locals => {:product => @product}) %>
+		<% else %>
+			<tr>
+				<td colspan="2">No tags have been created yet.</td>
+			</tr>
+		<% end %>
+		</tbody>
+	</table>
+</div>
+
+<p class="info">
+	Tags will be assigned when you save this product.
+</p>
+<p class="info">
+	(Button at the bottom of this page)</i>
+</p>
+
+
+
+</div>
+<div class="clear">&nbsp;</div>

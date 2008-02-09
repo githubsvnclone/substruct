@@ -1,0 +1,72 @@
+<% @two_column_layout = true %>
+
+<div id="left">
+  <h1>Secure Order Form - Step 1 of 2</h1>
+  <h2>Please fill in the fields below</h2>
+  <% if @request.ssl? %>
+    <p>
+      <img src="/images/lock.gif" alt="Lock Icon" /> All information transmitted is <b>secure</b>.
+    </p>
+  <% end %>
+
+  <p>
+    Once you are done entering your information, scroll to the <a href="#bottom">bottom of the page</a> and press the <i>Submit Order Information</i> button.
+  </p>
+
+  <%= start_form_tag :action => 'do_checkout' %>
+
+    <%= render(:partial => '/admin/orders/user') %>
+
+    <h2>Billing &amp; Shipping Address</h2>
+    <%= render(:partial => '/admin/orders/address', :locals => {:address_type => 'billing'}) %>
+
+    <br/>
+    <div class="padLeft">
+      <label><%= check_box_tag("use_separate_shipping_address", 'true', @use_separate_shipping_address, :class => 'inline', :id => 'use_diff_shipping') %> Ship to a different address</label>
+      <br/>
+    </div>
+
+    <div id="shipping_address"
+     style="<%= 'display:none;' if !@use_separate_shipping_address %>">
+      <h2>Shipping Address</h2>
+      <%= render(:partial => '/admin/orders/address', :locals => {:address_type => 'shipping'}) %>
+    </div>
+
+    <%= render(:partial => '/admin/orders/account') %>
+
+    <div class="line">&nbsp;</div>
+
+    <a name="bottom"></a>
+    <p>
+      <%= submit_tag "Submit Order Information", :class => 'button twohundred' %>
+      <div class="clear">&nbsp;</div>
+    </p>
+  <%= end_form_tag %>
+</div>
+
+<!-- RIGHT HAND SIDE -->
+
+<div id="right">
+
+  <h1>You Are Buying</h1>
+  <%= render(:partial => 'cart_contents', :locals => {:cart => @cart}) %>
+
+  <%= render(:partial => 'clear_cart') %>
+
+  <!-- ADD MORE ITEMS -->
+
+  <h2>Want To Buy More Items?</h2>
+  <p>
+    <a href="/store">Go back to this page</a>.
+  </p>
+
+
+  <h1>Need help?</h1>
+  <p>
+    <a href="/contact">Contact us</a>
+  </p>
+</div>
+
+<div class="clear">&nbsp;</div>
+
+<%= engine_javascript("substruct", "order") -%>

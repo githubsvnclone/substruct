@@ -1,0 +1,53 @@
+<div id="left">
+  <h1><%= @title %></h1>
+
+  <%= generate_navigation(@list_options, @viewing_by, 'list') %>
+
+  <table class="list" cellspacing="0" cellpadding="0">
+    <colgroup>
+      <col style="width:150px;"/>
+      <col />
+      <col style="width:120px;"/>
+      <col />
+    </colgroup>
+    <tr>
+      <th>URL</th>
+      <th>Title</th>
+      <th>Content Length</th>
+      <th>Display Date</th>
+    </tr>
+
+  <% if @content_nodes.length > 0 then %>
+    <% for content_node in @content_nodes %>
+    <tr class="<%= alternate %>">
+      <td>
+        <%= link_to truncate(content_node.name, 20), {:action => 'edit', :id => content_node} %>
+        <br/>
+        <br/>
+        <span class="info"><%= link_to 'Show here', {:action => 'show', :id => content_node}, :class=> 'normal' %></span>
+        <br/>
+        <span class="info"><a href="/<%= content_node.name %>" class="normal">Show on the site</a></span>
+      </td>
+      <td>
+        <%= content_node.title %>
+      </td>
+      <td><%= number_with_delimiter(content_node.content.length, ',') %> characters</td>
+      <td><%= content_node.display_on.strftime("%m/%d/%y") %></td>
+    </tr>
+    <% end %>
+  <% else %>
+    <tr>
+      <td colspan="4">No content to display in this view</td>
+    </tr>
+  <% end %>
+  </table>
+
+  <!-- PAGINATION -->
+  <br/>
+  <%= render(:partial => '/shared/pagination',
+              :object => @content_node_pages,
+              :locals => {:params => {:key => @viewing_by} }) %>
+</div>
+
+
+<%= render(:partial => 'right_side') %>

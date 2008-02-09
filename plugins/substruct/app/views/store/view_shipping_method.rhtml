@@ -1,0 +1,26 @@
+<% @two_column_layout = true %>
+<div id="left">
+  <h1><%= @title %></h1>
+
+  <%= start_form_tag :action => 'finish_order' %>
+
+  <div class="padLeft">
+    We'll use the fastest method possible to ship your items.
+    <br/>
+    Shipping cost for your order: <span class="money"><%= number_to_currency(@shipping_price) %></span>
+    <p>
+      <%= submit_tag "Finish Order", :class => 'button hundredfifty' %>
+    </p>
+  </div>
+
+  <%= end_form_tag %>
+</div>
+
+<div id="right">
+  <h1>You Are Buying...</h1>
+  <%= render(:partial => 'cart_contents', :locals => {:cart => @order}) %>
+
+  <%= render(:partial => 'clear_cart') %>
+</div>
+
+<div class="clear">&nbsp;</div>

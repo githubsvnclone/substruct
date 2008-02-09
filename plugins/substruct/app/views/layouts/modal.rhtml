@@ -1,0 +1,25 @@
+<html>
+<head>
+	<title><%=
+		if @title then
+			h @title
+		else
+			h controller.controller_name
+		end
+		-%></title>
+	<%= javascript_include_tag "prototype", "effects" %>
+	<%= engine_stylesheet "substruct" %>
+  <%= engine_javascript "substruct" %>
+	<style type="text/css">
+		body {
+			background-image: none;
+			background-color: #fff;
+			padding: 10px;
+			overflow:hidden;
+		}
+	</style>
+</head>
+<body scrolling="no">
+	<%= @content_for_layout %>
+</body>
+</html>

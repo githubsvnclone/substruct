@@ -1,0 +1,90 @@
+body {
+	background-color: #2F004E;
+	background-image: url(/engine_files/substruct/images/admin/background.png);
+}
+
+#container {
+	background-image: url(/engine_files/substruct/images/admin/body_background.png);
+}
+#header {
+	background-image: url(/engine_files/substruct/images/admin/header_background_logo.png);
+	background-repeat: no-repeat;
+}
+/* Div that comes before the content */
+#preContent {
+	height: 83px;
+	background-image: url(/engine_files/substruct/images/admin/body_background_top.png);
+	background-repeat: no-repeat;
+}
+#contentBody {
+	width: 879px;
+	background-image: url(/engine_files/substruct/images/admin/body_background.png);
+	padding: 0px;
+	clear:both;
+}
+
+
+#right h1, #right h2 {
+	border-bottom: 1px solid #ffffff !important;
+	color: #464440;
+}
+#right h2 {
+	font-weight: normal;
+}
+
+#right a {
+	font-weight: normal;
+	color: #333333;
+	text-decoration: underline;
+}
+
+/* This holds "log out" and the current user name */
+#global_nav {
+	float:right;
+	margin-top: -5px;
+	margin-right: 30px !important;
+	margin-right: 15px;
+	font-size: 0.9em;
+	text-align: right;
+}
+#global_nav a {
+	font-weight: normal;
+	color: #eeeeee;
+}
+
+/* NAV TABS
+ * These are defined in substruct.css - just overriding the graphics here
+ */
+#navigation ul.navigation li {
+	background-image: url(/engine_files/substruct/images/admin/tab_left.png);
+}
+#navigation ul.navigation li a{
+	background-image: url(/engine_files/substruct/images/admin/tab_right.png);
+}
+#navigation ul.navigation li.active {
+	background-image: url(/engine_files/substruct/images/admin/active_tab_left.png);
+}
+#navigation ul.navigation li.active a{
+	background-image: url(/engine_files/substruct/images/admin/active_tab_right.png);
+}
+
+
+#right .info {
+	font-size: 0.9em;
+	color: #6A6761;
+	font-style: normal;
+}
+
+/* */
+.headerActions {
+	display:none;
+	float:right;
+	margin-top:-30px;
+	margin-right:10px;
+}
+
+
+/* Header user ID */
+.user_id {
+	color: #B9808B;
+}
