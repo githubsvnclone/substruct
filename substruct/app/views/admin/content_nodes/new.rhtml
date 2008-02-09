@@ -1,0 +1,17 @@
+<div id="left">
+  <h1><%= @title %></h1>
+  <ul class="navigation secondary">
+    <li><a href="/admin/content_nodes/list/">Back to Content List</a></li>
+  </ul>
+
+  <%= start_form_tag :action => 'create' %>
+    <%= render_partial 'form' %>
+    <%= submit_tag "Save New Content", :class=> 'button hundredthirty' %>
+  <%= end_form_tag %>
+</div>
+
+<!-- RIGHT -->
+<div id="right">
+
+</div>
+<div class="clear">&nbsp;</div>

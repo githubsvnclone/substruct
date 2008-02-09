@@ -1,0 +1,29 @@
+<tr id="tag<%= tag_list_row.id %>" class="<%= alternate %>">
+	<td>
+		<span id="tag_edit_<%= tag_list_row.id %>" style="display:none;">
+			<input type="text" id="tag_input_<%= tag_list_row.id %>" class="textInput" value="<%= tag_list_row.name %>" size="30" />
+		</span>
+		<span id="tag_name_<%= tag_list_row.id %>"><%= tag_list_row.name %></span>
+	</td>
+	<!-- Rename stuff -->
+	<td style="text-align:center;">
+		<span id="tag_rename_<%= tag_list_row.id %>">
+			<a href="#" onclick="showEditTag(<%= tag_list_row.id %>);return false;">Rename</a>
+		</span>
+		<span id="tag_rename_controls_<%= tag_list_row.id %>" style="display:none;">
+			<a href="#" onclick="saveEdit(<%= tag_list_row.id %>);return false">Save</a>
+		</span>
+		<img src="/engine_files/substruct/images/indicator.gif" id="spin_edit_<%= tag_list_row.id %>" style="display:none;" />
+	</td>
+	<td style="text-align:center;">
+		<%= link_to_remote image_tag("/engine_files/substruct/images/trash.gif", :id => "trash#{tag_list_row.id}"),
+		    :url => {
+		        :controller => "tags",
+		        :action => "delete_comment", 
+		        :id => tag_list_row.id},
+		    :loading => "status(#{tag_list_row.id});",
+				:complete => "deleteRow('tag#{tag_list_row.id}');"
+		%>
+		<img src="/engine_files/substruct/images/indicator.gif" id="spin<%= tag_list_row.id %>" style="display:none;" />
+	</td>
+</tr>

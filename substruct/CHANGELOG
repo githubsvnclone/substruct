@@ -1,0 +1,119 @@
+Substruct Version Changelog and Update Notes
+===============================================================================
+
+Version 0.8
+---------------------------------------
+Fixed:
+  - Made sure questions require title.
+    - This makes sure you can actually click on all questions from the UI (whoops!)
+  - DB setup was flawed, see migrations note.
+
+	Migrations Note
+	-----
+	Loading db from the schema.rb file was seriously fucked, causing problems with duplicate columns and other nonsense. 
+
+	I've relabeled the migrations, adding the initial DB state as 001. Every other migration has been bumped up 1 version.
+
+	Upgraders might have to change your engine_schema_info table....just an alert.
+
+Version 0.75
+---------------------------------------
+Added:
+	- Ability to download orders on admin side in XML and CSV for export
+	  to other applications like QuickBooks
+	
+Upgrade steps:
+	0. gem install fastercsv
+	
+Updated:
+	- Updated to Rails 1.1.6
+	- Updated to Engines 1.1.4
+	
+
+Version 0.7
+---------------------------------------
+Added:
+	- Role Based Access Control
+
+Updated:
+	- Updated to Rails 1.1.2 - now included in the vendor directory
+	- New authority data for FedEx, be sure to reload authority data!
+	
+Fixed:
+	- Content URLs now auto-clean before validation (Ticket #22)
+	- Estimation of international FedEx packages.
+	  - Including the shipping gem as a library now.
+	- Bug on new product creation where tags weren't being saved properly.
+	- Bug where it was impossible to clear all tags from a product once assigned.
+	- Adding multiple items to the cart object. Before it was only adding 1 at a time.
+
+Upgrade steps:
+  0. rake rails:update
+
+	1. rake db:migrate:engines:substruct
+	
+	2. rake load_authority_data
+     !!! WARNING !!!
+     This could overwrite your admin user! All that's needed is to 
+     update the shipping tables, so you could possibly extract those 
+     records by themselves and insert by hand.
+
+     Yes, I know it should have probably been a migration...sorry.
+
+	3. Create an application specific application.rb file. 
+		 (your_rails_dir/app/controllers/application.rb)
+		 It's contents should look like this:
+		
+				class ApplicationController < ActionController::Base
+				  include SubstructApplicationController
+				end
+
+     This makes sure that everything is loaded properly. Newer versions of
+     Rails were causing issues with loading the application controller from
+     the engines directory.
+	
+
+
+Version 0.61
+---------------------------------------
+Updated:
+  - New routes.rb file - you need to copy this into your config directory!
+  This supports the new store show_by_tags with multiple tags.
+  - Changed store/show_by_tags to display friendly URLs
+    (Tags are now passed in by name, not ID)
+  - Changed AJAX cart to display 1 physical item for each item / quantity in the cart.
+    (no more "x2", etc)
+  - Broke out some CSS into include files for the cart.
+
+Upgrade steps:
+	0. Copy the new routes.rb to your config directory, or merge the changes.
+
+Version 0.6
+---------------------------------------
+Added:
+	- Tagging for products
+	- Maintenance of product tags
+	- Automatic image thumbnail / small size creation via RMagick
+
+Updated:
+	- Better shopping cart experience with AJAX cart
+	- Faceted navigation of product categories
+	- Fixed bug where product images would auto-delete when updating something else about a product.
+
+Upgrade steps:
+
+	0. Update the source
+
+			tar -xzvf substruct.tar.gz my_rails_app/vendor/plugins/
+
+	1. Update the DB
+
+			rake engine_migrate
+
+	2. Add blank loading html file for modal. This page gets swapped into the modal dialog (as seen when editing tags) when it's not visible.
+
+			touch public/loading.html
+
+	3. Install RMagick
+
+			This is necessary for automatic image resizing of product images

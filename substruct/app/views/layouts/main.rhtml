@@ -1,0 +1,88 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title><%=
+		if @title then
+			h @title
+		else
+			h controller.controller_name
+		end
+		-%> : Substruct</title>
+	<%= javascript_include_tag "prototype", "effects", "dragdrop", "controls" %>
+	<%= engine_stylesheet "substruct" %>
+  <%= engine_javascript "substruct" %>
+</head>
+<body>
+
+<%
+	# TODO - Clean up this messy navigation generation stuff...
+	#
+	@cname = controller.controller_name
+	@aname = controller.action_name
+	# Special handling for the home page...
+	if (@cname == 'content_nodes' && @aname == 'show_by_name' && params[:name] == 'home') then
+		@cname = 'main'
+	end
+	# Is this a blog post?
+	@blog_post = false
+	if (@cname == 'content_nodes' && @content_node) then
+		if (@content_node.is_blog_post?) then
+			@blog_post = true
+		end
+	end
+%>
+
+<% if flash[:notice] -%>
+	<div id="flash" style="display:none;">
+		<h2>Wanted to let you know...</h2>
+		<p>
+			<%= flash[:notice] %>
+		</p>
+		<p>
+		<a href="#" class="action" onmousedown="new Effect.BlindUp($('flash'))" />Close</a>
+		</p>
+	</div>
+	<script type="text/javascript">
+		 new Effect.BlindDown($("flash"));
+	</script>
+<% end -%>
+
+<!-- Begin Container -->
+<div id="container" class="<%= @two_column_layout == true ? 'twoColumn' : '' %>">
+	<!-- Begin Header -->
+	<div id="navigation">
+		<ul class="navigation">
+			<li class="<%= @cname == 'main' ? 'active' : '' %>">
+				<a href="/">Home</a>
+			</li>
+			<li class="<%= @blog_post == true ? 'active' : '' %>">
+				<a href="/blog/">Blog</a>
+			</li>
+			<li class="<%= @cname == 'store' ? 'active' : '' %>">
+				<a href="/store/">Store</a>
+			</li>
+		</ul>
+	</div>
+	<div id="header">
+		&nbsp;
+	</div>
+  <div id="preContent" class="<%= @two_column_layout == true ? 'twoColumn' : '' %>">
+    &nbsp;
+  </div>
+	<!-- End header -->
+
+	<!-- Begin content body  -->
+	<div id="contentBody" class="<%= @two_column_layout == true ? 'twoColumn' : '' %>">
+		<%= @content_for_layout %>
+	</div>
+	<!-- End content body -->
+
+
+	<div id="footer">
+	</div>
+
+</div>
+<!-- End container -->
+
+</body>
+</html>

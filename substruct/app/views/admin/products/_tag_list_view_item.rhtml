@@ -1,0 +1,12 @@
+<% 
+	tag = tag_list_view_item
+	count = tag.product_count
+%>
+<li>
+	<% if count > 0 then %>
+		<%= link_to tag.name, :action => 'list_by_tags', :key => tag.id %>
+	<% else %>
+		<%=h tag.name %>
+	<% end %>
+	<span class="info">(<%= pluralize(count, 'item') %>)</span>
+</li>

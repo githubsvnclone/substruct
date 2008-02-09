@@ -1,0 +1,14 @@
+<%= start_form_tag({:action => 'create'}, :multipart => true) %>
+<div id="left">
+  <h1><%= @title %></h1>
+  <ul class="navigation secondary">
+    <li><a href="/admin/products/list/">Back to Product List</a></li>
+  </ul>
+
+    <%= render :partial => 'form' %>
+    <%= submit_tag "Save New Product", :class => 'button hundredfifty' %>
+
+</div>
+
+<%= render(:partial => 'crud_right') %>
+<%= end_form_tag %>

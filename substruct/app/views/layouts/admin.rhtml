@@ -1,0 +1,83 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+	<title><%=
+		if @title then
+			h @title
+		else
+			h controller.controller_name
+		end
+		-%> : Substruct ADMIN</title>
+	<%= javascript_include_tag "prototype", "effects" %>
+	<%= engine_stylesheet "substruct", "admin", "subModal" %>
+  <%= engine_javascript "substruct", "subModal" %>
+</head>
+<body>
+
+<% @cname = controller.controller_name %>
+
+<% if flash[:notice] -%>
+	<div class="" id="flash" style="display:none;">
+		<h2>Wanted to let you know...</h2>
+		<p>
+			<%= flash[:notice] %>
+		</p>
+		<p>
+		<a href="#" class="action" onmousedown="new Effect.BlindUp($('flash'))" />Close</a>
+		</p>
+	</div>
+	<script type="text/javascript">
+		 new Effect.BlindDown($("flash"));
+	</script>
+<% end -%>
+
+<div id="container">
+	<div id="navigation">
+		<ul class="navigation">
+			<li class="<%= @cname == 'orders' ? 'active' : '' %>">
+				<a href="/admin/orders">Orders</a>
+			</li>
+			<li class="<%= @cname == 'products' ? 'active' : '' %>">
+				<%= link_to_section "Products", :controller=>"/admin/products" rescue nil %>
+			</li>
+			<li class="<%= @cname == 'questions' ? 'active' : '' %>">
+				<%= link_to_section "Questions", :controller=>"/admin/questions" rescue nil %>
+			</li>
+			<li class="<%= @cname == 'content_nodes' ? 'active' : '' %>">
+				<%= link_to_section "Content", :controller=>"/admin/content_nodes" rescue nil %>
+			</li>
+		  <li class="<%= @cname == 'users' ? 'active' : '' %>">
+				<%= link_to_section "Users", :controller=>"/admin/users" rescue nil %>
+			</li>
+		</ul>
+	</div>
+	<div id="header">
+		&nbsp;
+		<div id="global_nav"> 
+			<span style="text-transform:capitalize;"><%= current_user_notice rescue nil %></span>
+			<br/>
+			<span class="user_id"><%=h User.find(@session[:user]).login %> - <%=h @request.env["SERVER_NAME"] %></span>
+			<br/><br/>
+			<a href="http://dev.subimage.com/projects/substruct/wiki/HelpUsage" class="submodal-600-400">Online Help</a> -
+			<a href="http://dev.subimage.com/projects/substruct/">About Substruct</a>
+		</div>
+	</div>
+	<div id="preContent">
+		&nbsp;
+	</div>
+
+	<!-- content body -->
+	<div id="contentBody">
+
+		<%= @content_for_layout %>
+
+	<!-- end content body -->
+	</div>
+
+<!-- end container -->
+</div>
+
+
+</body>
+</html>

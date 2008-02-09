@@ -1,0 +1,198 @@
+= Installing Substruct =
+
+== Preamble ==
+
+'''Substruct is a framework that includes'''
+ * CMS / Blogging tools
+ * E-Commerce engine
+   * Shopping cart
+   * Shipping rate calculation through FedEx
+   * Online processing via Authorize.net
+   * Inventory management
+   * Order management
+ * Admin area to administer site
+ * Q/A system with integrated FAQ
+
+This software package is developed using the Engines plugin. To find out more about how to use engines in general, go to http://rails-engines.org
+
+'''These directions assume you already have a working Rails hosting environment. This means...'''
+ * A web server such as
+   * Webrick (included with Rails)
+   * Apache
+   * Lighttpd
+ * MySQL (PG works as well, but I don't support it in the main distro)
+ * Ruby
+ * Rails (1.1.6 is currently included with the application)
+
+These directions _also_ assume you have some familiarity with developing Rails applications in general and a working knowledge of the UNIX file system.
+
+''We're currently working on an installation script...for now though follow the directions...'''
+
+== Installation ==
+
+0. Install the following gems...This engine is dependent on them!
+ * Payment
+ * RedCloth
+ * RMagick
+ * Shipping (included with the distro now, no need to install)
+
+{{{
+#!sh
+
+gem install payment
+gem install RedCloth
+gem install fastercsv
+
+}}}
+
+For RMagick you might want to check out this url:
+http://rmagick.rubyforge.org/install-faq.html
+
+!! NOTE !! Be sure net/ssl is also installed. For Debian linux boxes this is _not_ included in the default Ruby installer. If you are running on debian it's as easy as typing 'apt-get install libopenssl-ruby1.8'
+
+1. Create your Rails application. Make sure you at least have Rails 1.0 installed. 1.1.2 is currently packaged with the distribution, and Substruct will run off of that.
+
+{{{
+#!sh
+
+rails myapp
+cd myapp
+
+}}}
+
+!!! INCLUDE SUBSTRUCT IN YOUR APPLICATION !!!
+
+Make sure myapp/app/controllers/application.rb file looks something like this
+
+{{{
+#!ruby
+
+class ApplicationController < ActionController::Base
+  include SubstructApplicationController
+end
+
+}}}
+
+!!! MAKE SURE TO DELETE application_helper.rb !!!
+You don't need it for a basic Substruct app.
+Create a blank "loading.html" page.
+
+{{{
+#!sh
+
+rm app/helpers/application_helper.rb
+touch public/loading.html
+rm public/index.html
+
+}}}
+
+[wiki:GettingTheCode 2. Install Substruct into your vendor/plugins directory using SVN]
+
+3. Copy and modify all of the files from ./config_stubs into your /config directory.
+
+{{{
+#!sh
+
+cp vendor/plugins/substruct/config_stubs/* config/
+
+}}}
+
+The YML files for shipping and payment should be filled out with proper values, but make sure to ALSO fill in the default GLOBAL vars in your environment.rb.
+
+The gems both don't seem to pick up on the values from the config files in a reliable manner, so I'm loading them there instead. !!!This might change in the future!!!
+
+Perform any configuration you might need. You'll probably want to set these values in environment.rb (before the call to Engines.start):
+
+{{{
+#!ruby
+
+module Substruct
+ config :some_option, "some_value"
+end
+
+}}}
+
+4. Setup databases for substruct to work & Edit your database.yml file
+ Create the following:
+
+ * substruct_development
+ * substruct_test
+ * substruct_production
+
+ Make sure to setup your database.yml to access those new db's properly
+
+5. Initialize the database tables using the following unix commands. Translate to DOS if you need to.
+
+This loads the initial schema, updates to the latest using migrations, then finally loads authority data into the DB.
+
+{{{
+#!sh
+
+rake db:migrate:engines:substruct
+
+}}}
+
+NOTE: If you're going to set this up in production you need to follow the same steps, only for production!
+
+{{{
+#!sh
+
+rake db:migrate:engines:substruct RAILS_ENV=production
+
+}}}
+
+6. Substruct provides a default stylesheet and a small javascript helper file, so you'll probably want to include the former and almost certainly the latter in your application's layout. Add the following lines:
+
+{{{
+#!text/html
+
+<%= engine_stylesheet "substruct" %>
+<%= engine_javascript "substruct" %>
+
+}}}
+
+== Configuration ==
+
+A number of configuration parameters are available to allow to you control
+how the data is stored, should you be unhappy with the defaults. These are
+outlined below.
+
+{{{
+#!ruby
+
+module Substruct
+	# Should we use live rate calculation via FedEx?
+	config :use_live_rate_calculation, false
+	
+	# Override SSL production mode?
+	# If set to true the cart and checkout are accessed via HTTP not HTTPS
+	# regardless of the mode that the server is run in.
+	# 
+	# This is useful for me on the demo site where I don't want
+	# to set up a SSL cert.
+	config :override_ssl_production_mode, false
+end
+
+}}}
+
+== Usage ==
+
+Fire up your environment!
+
+{{{
+#!sh
+
+ruby script/server
+
+}}}
+
+Try to login to http://localhost:3000/admin as ''admin'' / ''admin''
+
+=== Misc ===
+
+If you're going to be doing credit card transactions you need a processor account. [wiki:AuthorizeNet Check out how to get one.]
+
+Make sure you check out [wiki:MaintainingSubstruct how to maintain Substruct via cron] as well!!!
+
+== License ==
+See the [wiki:SubstructLicense]

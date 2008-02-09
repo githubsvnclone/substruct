@@ -1,0 +1,13 @@
+<!-- RIGHT -->
+<div id="right">
+	<br/>
+	<%= link_to 'Create New Order', {:action => 'new'}, :class => 'button hundredfifty' %>
+	<div class="clear">&nbsp;</div>
+
+	<%= render(:partial => 'search') %>
+
+  <h1 style="margin-top:20px;">Reports</h1>
+  <%= link_to_section "Sales Totals", :controller=>"/admin/orders/totals" rescue nil %>
+	
+</div>
+<div class="clear">&nbsp;</div>

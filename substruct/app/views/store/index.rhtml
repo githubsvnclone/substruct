@@ -1,0 +1,108 @@
+<%= engine_stylesheet "substruct", "cart" %>
+
+<!-- Hopefully, future versions of IE will natively understand position: fixed, and this can go away. -->
+
+<!--[if IE]>
+<link href="/engine_files/substruct/stylesheets/cart-ie.css" media="screen" rel="Stylesheet" type="text/css" />
+<script type="text/javascript">
+	var gFloater = null;
+	var gBody = null;
+
+	function initScroller() {
+		window.setInterval("doScroll();", 50);
+		gFloater = document.getElementById("cart");
+		if (document.documentElement) {
+			gBody = document.documentElement;
+		} else if (document.body) {
+			gBody = document.body;
+		} else {
+			gBody = document.getElementsByTagName("BODY")[0];
+		}
+	}
+	function doScroll() {
+		if (!gFloater) {
+			return;
+		}
+		if (self.pageYOffset) {
+			scrollTop = self.pageYOffset;
+		} else {
+			scrollTop = gBody.scrollTop;
+		}
+		gFloater.style.top = (getViewportHeight() + scrollTop - 125)+ "px";
+	}
+
+	Event.observe(window, "load", initScroller);
+</script>
+<![endif]-->
+
+<% @two_column_layout = true %>
+<div id="left">
+	<% if @viewing_tags == nil then %>
+  	<h1>Store</h1>
+	<% else %>
+		<h1>
+			<a href="/store">Store</a></a> &gt;
+			<%
+				# Show breadcrumb navigation for store
+				tag_name_list = Array.new
+				i = 0
+				for tag in @tag_names
+					tag_name_list << tag
+			%>
+				<% if i > 0 then %>&gt;<% end %>
+				<%= link_to tag, :controller => 'store', :action => 'show_by_tags', :tags => tag_name_list %>
+
+			<%
+				i += 1
+				end
+			%>
+		</h1>
+	<% end %>
+	
+	<% if @product_pages then %>
+    <!-- PAGINATION -->
+    <%= render(:partial => '/shared/pagination', :object => @product_pages) %>
+  <% end %>
+
+	<!-- PRODUCTS LIST -->
+  <% for product in @products %>
+    <p>
+      <%= render_component(:controller => 'store', :action => 'display_product', :id => product.id) %>
+    </p>
+  <% end %>
+
+  <% if @products.length == 0 then %>
+    <p>
+      Sorry, no products to show in this view.
+    </p>
+  <% end %>
+
+	<% if @product_pages then %>
+    <!-- PAGINATION -->
+    <br/>
+    <%= render(:partial => '/shared/pagination', :object => @product_pages) %>
+  <% end %>
+
+  <br/>
+	<!-- takes up space so we can see the bottom content on this page -->
+	<div id="bottomSpacer">&nbsp;</div>
+</div>
+
+<div id="right">
+
+	<h1>Narrow Product List</h1>
+
+	<%= render(:partial => 'tag_link', :collection => @tags,
+							:locals => {:tag_names => @tag_names}) %>
+</div>
+<div class="clear">&nbsp;</div>
+
+<div id="cart">
+	<div id="cartTitle">
+		<div id="indicator" style="display:none;"><%= image_tag "/engine_files/substruct/images/indicator.gif" %></div>
+		<div id="cartTitleText">Shopping Cart</div>
+	</div>
+	<div id="items">
+		<%= render(:partial => 'cart') %>
+	</div>
+</div>

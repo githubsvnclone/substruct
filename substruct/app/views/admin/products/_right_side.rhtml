@@ -1,0 +1,76 @@
+<div id="right">
+
+	<br/>
+	<%= link_to 'Create New Product', {:action => 'new'}, :class => 'button hundredfifty' %>
+	<div class="clear">&nbsp;</div>
+
+	<h1>Search All Products</h1>
+	<%= start_form_tag :controller => 'products', :action => 'search' %>
+	  <input class="textInput" type="text" name="term" size="28" style="width:135px;float:left;margin-right:5px;" /> <%= submit_tag('Go', {:class => 'button fifty'}) %>
+	  <div class="clear info">&nbsp;</div>
+	  <span class="info">Product Name, Code or Description</span>
+
+	<%= end_form_tag %>
+
+<script language="javascript" type="text/javascript">
+	// Called when closing the Tag edit dialog box
+	// Fires off a request for rendering the partial in our list box
+	function returnGetTags() {
+		// Update the table text and show loading message
+		Element.show($("updating_message"));
+		Element.update($("view_tags"), "");
+		// Doing this in a settimeout seems to work best as the AJAX crap wasn't
+		// being fired off by the submodal code for some reason.
+		window.setTimeout("doRealReturn();", 1);
+	}
+	// The actual AJAX call to update our Tag rows.
+	// This happens from a settimeout because of the way executing it
+	// was malfunctioning from the subModal code.
+	function doRealReturn() {
+		//Element.update($("tag_list_tbody"), "<tr><td colspan=\"2\">Updating list...</td></tr>");
+		var opt = {
+		    // Send this lovely data
+		    parameters: 'partial_name=tag_list_view_item',
+		    // Handle successful response
+		    onSuccess: function(t) {
+					if (t.responseText == "" || t.responseText == " ") {
+						// Assume there are no tags?
+						var emptyText = "<li>No tags have been created yet.</li>";
+						Element.update($("view_tags"), emptyText);
+					} else {
+						Element.update($("view_tags"), t.responseText);
+					}
+					Element.hide($("updating_message"));
+		    },
+		    // Handle other errors
+		    onFailure: function(t) {
+		      alert('Error ' + t.status + ' -- ' + t.statusText);
+					Element.hide($("updating_message"));
+		    }
+		}
+		new Ajax.Request('/admin/products/get_tags', opt);
+	}
+</script>
+
+  <h1 style="margin-top:20px;">Tagging</h1>
+	<p>
+		<a href="/admin/tags/list" onclick="showPopWin('/admin/tags/list', 400, 450, returnGetTags, false); return false;" class="action">Manage Tags</a> - <a href="http://dev.subimage.com/projects/substruct/wiki/HelpTagging" class="submodal-600-400 info">What are Tags?</a>
+	</p>
+
+	<h2>View Products By Tag</h2>
+	<!-- Updating message -->
+	<div id="updating_message" style="display:none;">
+		<img src='/engine_files/substruct/images/indicator.gif' /> Updating list, please wait...
+	</div>
+	<!-- View products by tag -->
+	<ul id="view_tags">
+		<% if @tags.length > 0 %>
+			<%= render(:partial => 'tag_list_view_item', :collection => @tags) %>
+		<% else %>
+			<li>No Tags have been created yet</li>
+		<% end %>
+	</ul>
+
+</div>
+
+<div class="clear">&nbsp;</div>

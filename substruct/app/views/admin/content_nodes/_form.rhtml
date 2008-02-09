@@ -1,0 +1,76 @@
+<!--[form:content_node]-->
+<div class="floatHalf">
+	<p>
+	  <label for="content_node_name">URL</label>
+	  <%= text_field 'content_node', 'name', :class => 'textInput'  %>
+	  <%= error_message_on(:content_node, :name) %>
+	  <br/>
+	  <span class="info">
+	    <ul>
+	      <li>Blog Posts will appear as /blog/URL or /URL</li>
+	      <li>Pages will appear as /URL</li>
+	      <li>Snippets can be inserted elsewhere in your site, but also are available as /URL</li>
+	    </ul>
+	  </span>
+	</p>
+</div>
+<div class="floatHalf">
+	<p>
+	  <label for="content_node_title">Title</label>
+	  <%= text_field 'content_node', 'title', :class => 'textInput'  %>
+	  <br/>
+	  <span class="info">Appears in the browser title bar and sometimes in the page itself</span>
+	</p>
+	
+	<p><label>Content Type</label>
+	  <%= select('content_node', 'content_node_type_id', ContentNodeType.select_values) %>
+	  <br/>
+	  <span class="info">Determines where content shows up on the customer-facing site.</span>
+	</p>
+
+	<p>
+	  <label for="content_node_display_one">Display date</label>
+	  <%= date_select 'content_node', 'display_on'  %>
+	</p>
+</div>
+<div class="clear">&nbsp;</div>
+
+<br/>
+
+<!-- content tabs -->
+<script language="javascript">
+	// Global content panes
+	var gPanes = new Array('content_edit', 'content_preview');
+</script>
+
+<div id="subnav">
+	<ul class="navigation tertiary" id="sub_tabs">
+		<li class="active"><a href="#" onclick="showSubTab('content_edit', this);return false;">Content Edit</a></li>
+		<li><a href="#" onclick="showSubTab('content_preview', this);return false;">Content Preview</a></li>
+	</ul>
+</div>
+<div class="clear">&nbsp;</div>
+
+<!-- content edit -->
+<div id="content_edit">
+	<br/>
+  <span class="info">
+    HTML and <a href="http://hobix.com/textile/" target="_blank">Textile</a> markup is allowed here.
+  </span>
+  <br/>
+  <%= text_area 'content_node', 'content', :cols => 70, :rows => 10, :class => 'textArea'  %>
+</div>
+
+<!-- content preview -->
+<div id="content_preview" style="display:none;border:1px dashed #999;padding:4px;min-height:200px;">
+	<%= get_markdown @content_node.content %>
+</div>
+
+<%= observe_field "content_node_content", 
+	:frequency => 1, 
+	:update => "content_preview",  
+	:url => { :action => "preview" } %> 
+
+
+<div class="clear;">&nbsp;</div>
+<!--[eoform:content_node]-->
