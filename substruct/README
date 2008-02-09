@@ -1,0 +1,175 @@
+= Installing Substruct =
+
+== Preamble ==
+
+'''Substruct is a framework that includes'''
+ * CMS / Blogging tools
+ * E-Commerce engine
+   * Shopping cart
+   * Online processing via Authorize.net
+   * Inventory management
+   * Order management
+ * Admin area to administer site
+ * Q/A system with integrated FAQ
+
+This software package is developed using the Engines plugin. To find out more about how to use engines in general, go to http://rails-engines.org
+
+'''These directions assume you already have a working Rails hosting environment. This means...'''
+ * A web server such as
+   * Webrick (included with Rails)
+   * Apache
+   * Lighttpd
+ * A rails app server
+   * Mongrel
+   * FastCGI
+ * MySQL (PG works as well, but I don't support it in the main distro)
+ * Ruby
+ * Rails (1.2.3 is currently included with the application)
+ * Engines (1.2.0)
+
+These directions _also_ assume you have some familiarity with developing Rails applications in general and a working knowledge of the UNIX file system.
+
+''We're currently working on an installation script...for now though follow the directions...'''
+
+== Installation ==
+
+0. Install the following gems...This engine is dependent on them!
+ * RedCloth
+ * RMagick
+ * fastercsv
+
+{{{
+#!sh
+
+gem install RedCloth
+gem install fastercsv
+
+}}}
+
+For RMagick you might want to check out this url:
+http://rmagick.rubyforge.org/install-faq.html
+
+!! NOTE !! Be sure net/ssl is also installed. For Debian linux boxes this is _not_ included in the default Ruby installer. If you are running on debian it's as easy as typing 'apt-get install libopenssl-ruby1.8'
+
+1. Create your Rails application.
+
+{{{
+#!sh
+
+rails myapp
+cd myapp
+
+}}}
+
+!!! INCLUDE SUBSTRUCT IN YOUR APPLICATION !!!
+
+Make sure myapp/app/controllers/application.rb file looks something like this:
+
+{{{
+#!ruby
+
+class ApplicationController < ActionController::Base
+  include SubstructApplicationController  
+  before_filter :set_substruct_view_defaults
+  before_filter :get_nav_tags
+  before_filter :find_customer
+end
+
+}}}
+
+(Or you can just copy the application.rb.example file in the config_stubs directory)
+
+!!! MAKE SURE TO DELETE application_helper.rb !!!
+You don't need it for a basic Substruct app.
+Create a blank "loading.html" page in ./myapp/public/.
+
+{{{
+#!sh
+
+rm app/helpers/application_helper.rb
+touch public/loading.html
+rm public/index.html
+
+}}}
+
+[wiki:GettingTheCode 2. Install Substruct into your vendor/plugins directory using SVN]
+
+3. Copy and modify all of the files from ./config_stubs into your /config directory.
+
+{{{
+#!sh
+
+cp vendor/plugins/substruct/config_stubs/* config/
+
+}}}
+
+4. Setup databases for substruct to work & Edit your database.yml file
+ Create the following:
+
+ * substruct_development
+ * substruct_test
+ * substruct_production
+
+ Make sure to setup your database.yml to access those new db's properly
+
+5. Initialize the database tables using the following unix commands. Translate to DOS if you need to.
+
+This loads the initial schema, updates to the latest using migrations, then finally loads authority data into the DB.
+
+{{{
+#!sh
+
+script/generate plugin_migration
+rake db:migrate
+
+}}}
+
+NOTE: If you're going to set this up in production you need to follow the same steps, only for production!
+
+{{{
+#!sh
+
+script/generate plugin_migration
+rake db:migrate RAILS_ENV=production
+
+}}}
+
+== Configuration ==
+
+A few configuration parameters are available to allow to you control
+how Substruct behaves.
+
+{{{
+#!ruby
+
+# Override SSL production mode?
+# If set to true the cart and checkout are accessed via HTTP not HTTPS
+# regardless of the mode that the server is run in.
+# 
+# This is useful for me on the demo site where I don't want
+# to set up a SSL cert.
+Substruct.override_ssl_production_mode = false
+
+}}}
+
+== Usage ==
+
+Fire up your environment!
+
+{{{
+#!sh
+
+ruby script/server
+
+}}}
+
+Try to login to http://localhost:3000/admin as ''admin'' / ''admin''
+
+=== Misc ===
+
+If you're going to be doing credit card transactions you need a processor account. [wiki:AuthorizeNet Check out how to get one.]
+
+Make sure you check out [wiki:MaintainingSubstruct how to maintain Substruct via cron] as well!!!
+
+== License ==
+See the [wiki:SubstructLicense]

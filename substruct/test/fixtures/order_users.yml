@@ -1,0 +1,14 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+joe:
+  id: 1
+  username: 'joe'
+  email_address: 'joe@test.com'
+  password: 'joe'
+  created_on: '2000-01-01 00:00'
+
+bob:
+  id: 2
+  username: 'bob'
+  email_address: 'bob@test.com'
+  password: 'bob'
+  created_on: '2004-01-01 00:00'

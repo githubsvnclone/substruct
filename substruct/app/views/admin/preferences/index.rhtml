@@ -1,0 +1,54 @@
+<div id="left">
+	<h1><%= @title %></h1>
+	<div class="padLeft">
+		<p class="info">...TODO...</p>
+		
+		<h2>Credit Card Processing</h2>
+		
+		<p>
+			<%= make_label('Authorize.net Login', true) %>
+		</p>
+		<p>
+			<%= make_label('Authorize.net Password', true) %>
+		</p>
+		<p>
+			<%= make_label('Clear all but last 4 digits of CC# after processing order?', true) %>
+		</p>
+		
+		<h2>Store Configuration</h2>
+		<p>
+			<%= make_label('Your Country', true) %>
+		</p>
+		<p>
+			<%= make_label('Show Order Confirmation Page?', true) %>
+		</p>
+		
+		<h2>Mail</h2>
+		
+		<p>
+			<%= make_label('SMTP Mail Host', true) %>
+		</p>
+		
+		<p>
+			<%= make_label('SMTP Username', true) %>
+		</p>
+		
+		<p>
+			<%= make_label('SMTP Username', true) %>
+		</p>
+		
+		<p>
+			<%= make_label('Send E-Mails As', true) %>
+		</p>
+		
+		<div class="line"></div>
+		
+		<button class="button">Save Preferences</button>
+	</div>
+</div>
+
+<div id="right">
+	<%= render :partial => 'sidebar' %>
+</div>
+
+<div class="clear"></div>

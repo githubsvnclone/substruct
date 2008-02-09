@@ -1,0 +1,41 @@
+first:
+  id: 1
+
+joes_address:
+  id: 2
+  order_user_id: 1
+  is_shipping: true
+  first_name: 'Joe'
+  last_name: 'Test'
+  telephone: '555-555-1212'
+  address: '123 East San Carlos'
+  city: 'San Jose'
+  state: 'CA'
+  zip: '95112'
+  country_id: '1'
+
+bobs_address:
+  id: 3
+  order_user_id: 2
+  is_shipping: true
+  first_name: 'Bob'
+  last_name: 'Test'
+  telephone: '555-555-1212'
+  address: '995 Somewhere Lane'
+  city: 'Sacramento'
+  state: 'CA'
+  zip: '94203'
+  country_id: '1'
+
+bobs_bad_address:
+  id: 4
+  order_user_id: 2
+  is_shipping: false
+  first_name: 'Bob'
+  last_name: 'Test'
+  telephone: '555-555-1212'
+  address: 'PO Box 123 My Street'
+  city: 'Sacramento'
+  state: 'CA'
+  zip: '94203'
+  country_id: '1'
