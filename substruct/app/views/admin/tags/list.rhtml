@@ -1,0 +1,182 @@
+<h1><%= @title %></h1>
+
+<script language="javascript" type="text/javascript">
+	/**
+	 * There's a lot of JS in this page I should probably move
+	 * to an external file, but for now I'm just leaving it here.
+	 *
+	 * All of it is specific to the AJAX stuff on this page.
+	 */
+
+	// Deletes a row after AJAX completion & recolors table
+	var returnVal = null;
+	
+	// Checks to see if there are no tags, shows the "no tags" row if necessary
+	function noTagsCheck() {
+		var table = $("tag_list");
+		// Possibly no tags - show no tags row
+		if (table.rows.length == 2) {
+			Element.show("no_tags_row");
+		} else {
+			Element.hide("no_tags_row")
+		}
+	}
+	
+	function deleteRow(row_id) {
+		Element.remove($(row_id));
+		noTagsCheck();
+		stripedTable();
+	}
+	
+	// Shows spinning status wait thing
+	function status(tag_id) {
+		Element.hide("trash"+tag_id);
+		Element.show("spin"+tag_id);
+	}
+	
+	// Shows spinning loading status for creating a tag
+	function loadingCreateTag() {
+		// Show progress
+		Element.show($("create_loading"));
+		Element.hide($("create_tag"));
+	}
+	
+	// On success of a tag creation makes a new row in our table
+	function insertTag(request) {
+		var content = request.responseText;
+		
+		if (content == "") {
+			// Create failed!
+			alert("Creation of this Tag failed.\nDid you enter a duplicate name?");
+		} else {
+			// Create worked, make new table row and fill it in
+			new Insertion.Bottom($("tag_list_body"), content);
+		}
+		// Reload form
+		$("tag_name").value = "";
+		Element.hide($("create_loading"));
+		Element.show($("create_tag"));
+		noTagsCheck();
+		stripedTable();
+	}
+	
+	// Starts editing of tag
+	function showEditTag(tag_id) {
+		Element.hide("tag_name_"+tag_id);
+		Element.hide("tag_rename_"+tag_id);
+		Element.show("tag_rename_controls_"+tag_id);
+		Element.show("tag_edit_"+tag_id);
+		// focus on edit
+		$("tag_input_"+tag_id).value = $("tag_name_"+tag_id).innerHTML;	
+		$("tag_input_"+tag_id).focus();
+	}
+	
+	// Saves edit to a tag name
+	function saveEdit(tag_id) {
+		Element.hide("tag_rename_controls_"+tag_id);
+		Element.show("spin_edit_"+tag_id);
+		// Make AJAX request to rename tag
+		new Ajax.Request('/admin/tags/update', 
+				{ parameters:'id='+tag_id+'&name='+$F("tag_input_"+tag_id), 
+				  onSuccess:editSuccess, 
+				  onFailure:editFailure }
+				);
+	}
+	
+	// Runs when AJAX edit successful
+	function editSuccess(t) {
+		var response = t.responseText;
+		var tag = response.split(";;;");
+		var tag_id = tag[0];
+		var tag_name = tag[1];
+		var success = tag[2];
+		//
+		if (success == "true") {
+			$("tag_name_"+tag_id).innerHTML = tag_name;
+			$("tag_input_"+tag_id).value = tag_name;
+		} else {
+			// there was an error!
+			alert("Something went wrong saving your tag.\n\nRemember, tag names have to be unique.");
+			// reset input to original value
+			$("tag_input_"+tag_id).value = $("tag_name_"+tag_id).innerHTML;
+		}
+		Element.hide("spin_edit_"+tag_id);
+		Element.hide("tag_edit_"+tag_id);
+		Element.show("tag_name_"+tag_id);
+		Element.show("tag_rename_"+tag_id);
+	}
+
+	// Runs when AJAX edit failure
+	function editFailure(t) {
+		alert("There was a communication error with the server when trying to save your tag.")
+	}
+
+</script>
+<style type="text/css">
+	/* make sure both hide/show divs have the same height so no UI jump */
+	#create_tag, #create_loading {
+		height: 35px;
+	}
+</style>
+
+<!-- TAG TABLE LIST -->
+<div class="listContainer" style="height:280px;">
+	<table id="tag_list" class="list" cellpadding="0" cellspacing="0">
+		<colgroup>
+	  	<col/>
+			<col style="width:60px;" />
+			<col style="width:30px;" />	
+	  </colgroup>
+	<tbody id="tag_list_body">
+	  <tr>
+	    <th colspan="3">Tag Name</th>
+	  </tr>
+		<% if @tags.length > 0 then %>
+			<tr id="no_tags_row" style="display:none;">
+				<td>No Tags have been created yet</td>
+			</tr>
+			<%= render(:partial => 'tag_list_row', :collection => @tags) %>
+		<% else %>
+			<tr id="no_tags_row">
+				<td>No Tags have been created yet</td>
+			</tr>
+		<% end %>
+	</tbody>
+	</table>
+</div>
+
+<h2>Create New Tag</h2>
+
+<!-- AJAX CREATE TAG FORM -->
+<div id="create_tag">
+	<%= form_remote_tag(:complete => "",
+											:url => {
+													:controller => "tags",
+													:action => "create" },
+											:loading => "loadingCreateTag();",
+											:complete => "insertTag(request);",
+											:position => "tag_list"
+											) %>
+		<table>
+			<tr>
+				<td>
+					<%= text_field 'tag', 'name', :class => 'textInput' %></p>
+				</td>
+				<td>
+					<%= submit_tag "Create New Tag", :class => "button hundred" %>
+				</td>
+			</tr>
+		</table>
+	<%= end_form_tag %>
+</div>
+
+<!-- CREATE LOADING SCREEN -->
+<div id="create_loading" style="display:none;">
+	<div style="float:left;"><img src="/engine_files/substruct/images/indicator.gif" /></div>
+	<div style="margin-top:-2px;margin-left:5px;float:left;">Creating your Tag now...</div>
+</div>
+
+<!-- CLOSE -->
+<div class="line">&nbsp;</div>
+
+<input type="button" onclick="window.top.hidePopWin(true);" value="Close This Window" class="button hundredthirty" />

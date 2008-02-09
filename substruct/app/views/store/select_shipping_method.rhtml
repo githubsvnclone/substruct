@@ -1,0 +1,33 @@
+<% @two_column_layout = true %>
+<div id="left">
+  <h1><%= @title %></h1>
+
+  <%= start_form_tag :action => 'set_shipping_method' %>
+
+  <div class="padLeft">
+    <% for type in session[:order_shipping_types] %>
+      <label>
+        <%= radio_button_tag('ship_type_id', type.id, (type.id == @default_price)) %>
+        <b><%= type.name %></b>
+        <p style="padding-left:15px;">
+           <span class="money"><%= number_to_currency(type.price) %></span>
+           <span class="info">(<%= number_to_currency(type.price+@order.total) %> Total)</span>
+        </p>
+      </label>
+    <% end %>
+
+    <p>
+      <%= submit_tag "Use Selected Shipping Method", :class => 'button twohundred' %>
+    </p>
+  </div>
+
+  <%= end_form_tag %>
+</div>
+
+<div id="right">
+  <h1>You Are Buying...</h1>
+  <%= render(:partial => 'cart_contents', :locals => {:cart => @order}) %>
+
+  <%= render(:partial => 'clear_cart') %>
+</div>
+<div class="clear">&nbsp;</div>

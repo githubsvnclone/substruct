@@ -1,0 +1,47 @@
+<div id="fullContent">
+	<h1>Thanks For Your Order!</h1>
+	<p>
+	  You will receive an email confirmation shortly.
+	</p>
+
+	<div class="floatHalf">
+	  <h1>Order #<%= @order.order_number %></h1>
+
+	  <h2>Billing Info</h2>
+		<%= render(:partial => 'address_table', :locals => {:address => @order.billing_address})%>
+
+		<h2>Shipping Info</h2>
+		<%= render(:partial => 'address_table', :locals => {:address => @order.shipping_address})%>
+
+		<h2>Order Items</h2>
+		<%= render(:partial => 'cart_contents', :locals => {:cart => @order}) %>
+
+		<h2>Shipping And Totals</h2>
+		<table cellpadding="0" cellspacing="0" class="list">
+		  <colgroup>
+    		<col style="width:35%;"/>
+    		<col />
+    	</colgroup>
+		  <tr>
+		    <th>Shipping Via</th>
+				<td>
+					<% if @order.order_shipping_type.nil? then %>
+			    	The fastest way possible...
+					<% else %>
+						<%= @order.order_shipping_type.name %>
+					<% end %>
+				</td>
+		  </tr>
+		  <tr>
+		    <th>Shipping Cost</th>
+		    <td><%= number_to_currency(@order.shipping_cost) %></td>
+		  </tr>
+		  <tr>
+		    <th>Order Total</th>
+		    <td class="money"><%= number_to_currency(@order.total) %></td>
+		  </tr>
+		</table>
+	</div>
+
+	<div style="clear:both;"></div>
+</div>

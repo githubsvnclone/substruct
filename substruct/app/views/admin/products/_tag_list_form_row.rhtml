@@ -1,0 +1,8 @@
+<tr class="<%= alternate %> <%= 'selected' if product.tags.include?(tag_list_form_row)%>">
+	<td>
+		<%= check_box_tag("product[tags][]", tag_list_form_row.id, product.tags.include?(tag_list_form_row)) %>
+	</td>
+	<td>
+		<%=h tag_list_form_row.name %>
+	</td>
+</tr>

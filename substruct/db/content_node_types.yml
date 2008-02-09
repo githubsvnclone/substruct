@@ -1,0 +1,13 @@
+--- 
+- !ruby/object:ContentNodeType 
+  attributes: 
+    name: Blog Post
+    id: "1"
+- !ruby/object:ContentNodeType 
+  attributes: 
+    name: Snippet
+    id: "2"
+- !ruby/object:ContentNodeType 
+  attributes: 
+    name: Page
+    id: "3"
