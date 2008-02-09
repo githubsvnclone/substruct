@@ -1,0 +1,51 @@
+--- 
+5: 
+  shipping_multiplier: 3.0
+  name: FedEx International Priority (International Only)
+  company: FedEx
+  code: FIC
+  flat_fee: 45.0
+  transaction_type: rate_express
+  id: 5
+  service_type: international_priority
+  is_domestic: false
+1: 
+  shipping_multiplier: 0.8
+  name: FedEx Ground (USA Only)
+  company: FedEx
+  code: FGR
+  flat_fee: 10.0
+  transaction_type: rate_ground
+  id: 1
+  service_type: ground_service
+  is_domestic: true
+2: 
+  shipping_multiplier: 1.5
+  name: FedEx Next Day Air Shipping (USA Only)
+  company: FedEx
+  code: FES
+  flat_fee: 35.0
+  transaction_type: rate_express
+  id: 2
+  service_type: standard_overnight
+  is_domestic: true
+3: 
+  shipping_multiplier: 1.0
+  name: FedEx 2nd Day Air Shipping (USA Only)
+  company: FedEx
+  code: F2D
+  flat_fee: 17.0
+  transaction_type: rate_express
+  id: 3
+  service_type: 2day
+  is_domestic: true
+4: 
+  shipping_multiplier: 2.0
+  name: FedEx International Economy (International Only)
+  company: FedEx
+  code: FIX
+  flat_fee: 30.0
+  transaction_type: rate_ground
+  id: 4
+  service_type: international_economy
+  is_domestic: false

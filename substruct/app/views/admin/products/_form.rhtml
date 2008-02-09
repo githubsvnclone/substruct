@@ -1,0 +1,100 @@
+<%= error_messages_for 'product' %>
+
+<div class="float">
+	<p>
+		<label for="product_title">Name</label>
+		<%= text_field 'product', 'name', :class => 'textInput'  %>
+	</p>
+
+	<p>
+		<label for="product_description">Description</label>
+		<span class="info">
+	    HTML and <a href="http://hobix.com/textile/" target="_blank">Textile</a> markup is allowed here.
+	  </span>
+		<br/>
+		<%= text_area 'product', 'description', :rows => 14, :class => 'textArea'  %>
+	</p>
+</div>
+
+<div class="float">
+	<p>
+		<label for="product_code">Product Code</label>
+		<%= text_field 'product', 'code', :class => 'textInput'  %>
+	</p>
+
+	<p>
+		<label for="product_price">Price <span class="info">(dollars)</span></label>
+		<%= text_field 'product', 'price', :class => 'textInput'  %>
+	</p>
+
+	<p>
+		<label for="product_date_available">Date available</label>
+		<%= date_select 'product', 'date_available'  %>
+	</p>
+
+	<p>
+		<label for="product_quantity">Quantity</label>
+		<%= text_field 'product', 'quantity', :class => 'textInput'  %>
+	</p>
+
+	<div class="float">
+		<p>
+			<label for="product_size_width">Width <span class="info">(inches)</span></label>
+			<%= text_field 'product', 'size_width', :size => '10', :class => 'textInput'  %>
+		</p>
+		<p>
+			<label for="product_size_depth">Depth <span class="info">(inches)</span></label>
+			<%= text_field 'product', 'size_depth', :size => '10', :class => 'textInput'  %>
+		</p>
+	</div>
+
+	<div class="float">
+		<p>
+			<label for="product_size_height">Height <span class="info">(inches)</span></label>
+			<%= text_field 'product', 'size_height', :size => '10', :class => 'textInput'  %>
+		</p>
+		<p>
+			<label for="product_weight">Weight <span class="info">(pounds)</span></label>
+			<%= text_field 'product', 'weight', :size => '10', :class => 'textInput'  %>
+		</p>
+	</div>
+	<div class="clear">&nbsp;</div>
+</div>
+
+<div class="line">&nbsp;</div>
+
+<h2>Product Image</h2>
+
+<div class="padLeft">
+	<% if @product.images.length > 0 then %>
+		<div>
+			<% for @p_image in @product.images %>
+				<label>Path</label>
+				<%= @p_image.path %>
+				<br/><br/>
+				
+				<label>Image</label>
+				<% if url_for_file_column("p_image", "path", "small") then %>
+					<%= image_tag url_for_file_column("p_image", "path", "small") %>
+				<% end %>
+				<br/>
+				<a href="<%= url_for_file_column("p_image", "path", "thumb") %>">View Thumbnail</a> | <a href="<%= url_for_file_column("p_image", "path") %>">View Original</a>
+				<br/>
+				<span class="info">If you don't see an image it means the path is broken or doesn't exist any longer.</span>
+			<% end %>
+		</div>
+	<% else %>
+		This product has no images associated with it currently.
+	<% end %>
+	
+	<br/>
+	
+	<p>
+		<label>Upload New Image</label>
+		<%= file_column_field 'image', 'path' %>
+		<br/>
+		<span class="info">This will replace any existing image for this product</span>
+	</p>
+</div>
+
+<div class="line">&nbsp;</div>

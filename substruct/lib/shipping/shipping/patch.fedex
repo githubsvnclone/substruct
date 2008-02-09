@@ -1,0 +1,89 @@
+*** ./fedex.rb	Fri May 19 11:59:44 2006
+--- /usr/lib/ruby/gems/1.8/gems/shipping-1.3.0/lib/shipping/fedex.rb	Tue Dec  6 00:29:03 2005
+***************
+*** 385,397 ****
+           @required += [:transaction_type, :fedex_account, :fedex_meter, :fedex_url]
+  
+           @transaction_type ||= 'rate_ground'
+           @weight = (@weight.to_f*10).round/10.0
+  
+- 				 @country = @country || "US"
+- 				 @is_country_us = (@country == "US")
+- 
+           @data = String.new
+           b = Builder::XmlMarkup.new(:target => @data)
+           b.instruct!
+           b.FDXRateRequest('xmlns:api' => 'http://www.fedex.com/fsmapi', 'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance', 'xsi:noNamespaceSchemaLocation' => 'FDXRateRequest.xsd') { |b|
+           	b.RequestHeader { |b|
+--- 385,394 ----
+***************
+*** 403,437 ****
+           	b.DropoffType @dropoff_type || 'REGULARPICKUP'
+           	b.Service ServiceTypes[@service_type] || ServiceTypes['ground_service'] # default to ground service
+           	b.Packaging PackageTypes[@packaging_type] || 'YOURPACKAGING'
+           	b.WeightUnits @weight_units || 'LBS'
+           	b.Weight @weight
+           	b.OriginAddress { |b|
+           	  b.StateOrProvinceCode self.class.state_from_zip(@sender_zip)
+           		b.PostalCode @sender_zip
+           		b.CountryCode @sender_country_code || "US"
+           	}
+           	b.DestinationAddress { |b|
+           		b.PostalCode @zip
+!          		b.CountryCode @country
+!          	  b.StateOrProvinceCode self.class.state_from_zip(@zip) if @country == "US"
+           	}
+- 					# Tells fedex to return list rates as well as discounted rates
+- 					# This doesn't apply to international rates.
+- 					b.ListRate @is_country_us
+           	b.Payment { |b|
+           		b.PayorType PaymentTypes[@pay_type] || 'SENDER'
+           	}
+           	b.PackageCount @package_total || '1'
+           }
+  
+           get_response @fedex_url
+        end
+  	
+    		def get_error
+!   			return $!.backtrace if @response.class != REXML::Document
+! 
+    			code = REXML::XPath.first(@response, "//Error/Code").text
+    			message = REXML::XPath.first(@response, "//Error/Message").text
+  			
+    			return "Error #{code}: #{message}"
+    		end
+--- 400,432 ----
+           	b.DropoffType @dropoff_type || 'REGULARPICKUP'
+           	b.Service ServiceTypes[@service_type] || ServiceTypes['ground_service'] # default to ground service
+           	b.Packaging PackageTypes[@packaging_type] || 'YOURPACKAGING'
+           	b.WeightUnits @weight_units || 'LBS'
+           	b.Weight @weight
++          	b.ListRate true #tells fedex to return list rates as well as discounted rates
+           	b.OriginAddress { |b|
+           	  b.StateOrProvinceCode self.class.state_from_zip(@sender_zip)
+           		b.PostalCode @sender_zip
+           		b.CountryCode @sender_country_code || "US"
+           	}
+           	b.DestinationAddress { |b|
++          	  b.StateOrProvinceCode self.class.state_from_zip(@zip)
+           		b.PostalCode @zip
+!          		b.CountryCode @country || "US"
+           	}
+           	b.Payment { |b|
+           		b.PayorType PaymentTypes[@pay_type] || 'SENDER'
+           	}
+           	b.PackageCount @package_total || '1'
+           }
+  
+           get_response @fedex_url
+        end
+  	
+    		def get_error
+!   			return if @response.class != REXML::Document
+! 			
+    			code = REXML::XPath.first(@response, "//Error/Code").text
+    			message = REXML::XPath.first(@response, "//Error/Message").text
+  			
+    			return "Error #{code}: #{message}"
+    		end

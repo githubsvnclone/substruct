@@ -1,0 +1,42 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+first:
+  id: 1
+
+joes_account:
+  id: 2
+  order_user_id: 1
+  order_address_id: 2
+  order_account_type_id: 1
+  cc_number: '4007000000027'
+  account_number: ''
+  expiration_month: '01'
+  expiration_year: '2030'
+  credit_ccv: ''
+  routing_number: ''
+  bank_name: ''
+
+bobs_account:
+  id: 3
+  order_user_id: 2
+  order_address_id: 3
+  order_account_type_id: 1
+  cc_number: '999999999999'
+  account_number: ''
+  expiration_month: '01'
+  expiration_year: '2000'
+  credit_ccv: ''
+  routing_number: ''
+  bank_name: ''
+
+invalid_account:
+  id: 4
+  order_user_id: 1
+  order_address_id: 3
+  order_account_type_id: 1
+  cc_number: ''
+  account_number: ''
+  expiration_month: '01'
+  expiration_year: '2000'
+  credit_ccv: ''
+  routing_number: ''
+  bank_name: ''
