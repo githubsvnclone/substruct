@@ -1,0 +1,28 @@
+--- 
+5: 
+  name: "ORDERED - PAID - TO SHIP"
+  id: 5
+6: 
+  name: "ORDERED - PAID - SHIPPED"
+  id: 6
+1: 
+  name: CART
+  id: 1
+7: 
+  name: SENT TO FULFILLMENT
+  id: 7
+2: 
+  name: TO CHARGE
+  id: 2
+8: 
+  name: CANCELLED
+  id: 8
+3: 
+  name: "ON HOLD - PAYMENT FAILED"
+  id: 3
+9: 
+  name: RETURNED
+  id: 9
+4: 
+  name: "ON HOLD - AWAITING PAYMENT"
+  id: 4

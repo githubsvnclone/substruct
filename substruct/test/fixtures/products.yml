@@ -1,0 +1,39 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+soap:
+  id: 1
+  code: 'PRDKT1'
+  name: 'Fight Club Soap'
+  description: 'Soap made with the fat of humans'
+  price: 30.00
+  date_available: '1999-12-01 00:00'
+  quantity: 100
+  size_width: 5
+  size_height: 3
+  size_depth: 1
+  weight: 1.52
+
+uranium:
+  id: 2
+  code: 'PRDKT2'
+  name: 'Enriched Uranium'
+  description: 'Perfect for making that nuke you always wanted.'
+  price: 5000000.00
+  date_available: '2003-01-01 00:00'
+  quantity: 1
+  size_width: 50
+  size_height: 30
+  size_depth: 20
+  weight: 200.87
+
+chinchilla:
+  id: 3
+  code: 'PRDKT3'
+  name: 'Chinchilla Coat'
+  description: 'Piss those PETA people off with this wonderful fur.'
+  price: 700.50
+  date_available: '2000-01-01 00:00'
+  quantity: 30
+  size_width: 10
+  size_height: 14
+  size_depth: 3
+  weight: 4.45
