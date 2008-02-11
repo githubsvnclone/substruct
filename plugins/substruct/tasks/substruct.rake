@@ -2,7 +2,7 @@ namespace :substruct do
       
   SUBSTRUCT_DATA_DUMP_MODELS = [
     'ContentNode', 'Country', 'Preference', 'OrderShippingType', 
-    'OrderShippingWeight', 'OrderStatusCode', 'Right', 'Role', 'User'
+    'OrderShippingWeight', 'OrderStatusCode', 'Right', 'Role', 'Tag', 'User'
   ]
   
   SUBSTRUCT_BOOTSTRAP_PATH = 'vendor/plugins/substruct/db/bootstrap'
@@ -50,12 +50,34 @@ namespace :substruct do
       
       # Check requirements
       require 'rubygems' unless Object.const_defined?(:Gem)
-      %w(RedCloth fastercsv mime-types mini_magick).each do |gem_name|
+      %w(RedCloth fastercsv mime-types mini_magick ezcrypto).each do |gem_name|
         check_installed_gem(gem_name)
       end
       
       mkdir_p File.join(RAILS_ROOT, 'log')
       
+      puts "Checking requirements..."
+    
+      # Check for net/ssl
+      begin
+        require 'openssl'
+      rescue
+        puts
+        puts '=' * 80
+        puts
+        puts "!!! OPENSSL LOAD ERROR"
+        puts
+        puts "Your machine appears to be missing the openssl library."
+        puts
+        puts "On Debian/Ubuntu linux boxes this is not included with the "
+        puts "default Ruby installer. If you are running one of these systems"
+        puts "it's as easy as typing 'apt-get install libopenssl-ruby1.8'."
+        puts
+        puts "You must install openssl before continuing."
+        puts
+        raise
+      end
+    
       puts "Initializing database..."
       
       # Move our schema file into place so we can load it.
@@ -71,6 +93,18 @@ namespace :substruct do
         tmp:create
       ).each { |t| Rake::Task[t].execute task_args}
       
+      
+      # We have to set the proper plugin schema migration,
+      # because loading from bootstrap doesn't do it.
+      #
+      # Grab current schema version from the migration scripts.
+      schema_files = Dir.glob(File.join(RAILS_ROOT, 'vendor/plugins/substruct/db/migrate', '*'))
+      schema_version = File.basename(schema_files.last).to_i
+      ActiveRecord::Base.connection.execute(%Q\
+        INSERT INTO plugin_schema_info
+        VALUES('substruct', #{schema_version});
+      \)
+      
       puts '=' * 80
       puts
       puts "Thanks for trying Substruct #{Substruct::Version::STRING}"
@@ -79,7 +113,9 @@ namespace :substruct do
       puts "visit: http://localhost:3000/admin, and log in with admin / admin."
       puts
       puts "For help, visit the following:"
-      puts "  Official Substruct Site - http://dev.subimage.com/projects/substruct"
+      puts "  Official Substruct Sites "
+      puts "    - http://substruct.subimage.com"
+      puts "    - http://code.google.com/p/substruct/"
       puts "  Substruct Google Group - http://groups.google.com/group/substruct"
       puts
       puts "- Subimage LLC - http://www.subimage.com"
@@ -204,20 +240,19 @@ namespace :substruct do
       puts "Removing temp dir..."
       FileUtils.rm_rf(release_name)
       
-      puts "Moving release to download directory..."
-      FileUtils.mv(rel_archive, '../public/releases/')
+      puts "Uploading to Google Code..."
+      `googlecode-upload.py -s 'Substruct #{version}' -p 'substruct' --config-dir=#{File.join(RAILS_ROOT, 'vendor')} #{rel_archive}`
       
       puts "Done."
     end
     
     desc %q\
-    Tags a release. VERSION=new_version_number
+    Tags a release using the version string from Substruct::Version::STRING
     \
     task :tag => :environment do
-      version = ENV['VERSION']
-      raise "Please specify a VERSION." if version.nil?
+      version = ENV['VERSION'] || Substruct::Version::STRING
       puts "Tagging for version: #{version}"
-      puts `svn copy vendor/plugins ../tags/rel_#{version}`
+      puts `svn copy vendor ../tags/rel_#{version}`
     end
   
   end

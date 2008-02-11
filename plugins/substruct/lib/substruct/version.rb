@@ -1,8 +1,8 @@
 module Substruct
   module Version
-    MAJOR  = 0
-    MINOR  = 9
-    TINY   = 7
+    MAJOR  = 1
+    MINOR  = 0
+    TINY   = 'a1'
     STRING = [MAJOR, MINOR, TINY].join('.').freeze
     #TITLE  = "Noh-Varr".freeze
   end
