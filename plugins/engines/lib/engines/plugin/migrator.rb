@@ -27,47 +27,39 @@ class Engines::Plugin::Migrator < ActiveRecord::Migrator
   # installed plugins.
   #
   # See Engines.schema_info_table for more details.
-  def self.schema_info_table_name
+  def self.schema_migrations_table_name
     proper_table_name Engines.schema_info_table
   end
-
-  # Returns the current version of the given plugin
-  def self.current_version(plugin=current_plugin)
-    result = ActiveRecord::Base.connection.select_one(<<-ESQL
-      SELECT version FROM #{schema_info_table_name} 
-      WHERE plugin_name = '#{plugin.name}'
-    ESQL
-    )
-    if result
-      result["version"].to_i
-    else
-      # There probably isn't an entry for this engine in the migration info table.
-      # We need to create that entry, and set the version to 0
-      ActiveRecord::Base.connection.execute(<<-ESQL
-        INSERT INTO #{schema_info_table_name} (version, plugin_name) 
-        VALUES (0,'#{plugin.name}')
-      ESQL
-      )      
-      0
-    end
+  
+  def self.schema_info_table_name
+    # Legacy
+    schema_migrations_table_name
   end
   
-  def migrated(plugin=current_plugin)
-    ActiveRecord::Base.connection.select_values(<<-ESQL
-      SELECT version FROM #{self.class.schema_info_table_name}
-      WHERE plugin_name = '#{plugin.name}'
-    ESQL
-    ).map(&:to_i).sort - [0]
+  def self.current_version(plugin=current_plugin)
+    version = ::ActiveRecord::Base.connection.select_values(
+      "SELECT version FROM #{schema_migrations_table_name} WHERE plugin_name = '#{plugin.name}'"
+    ).map(&:to_i).max rescue nil
+    version || 0
+  end
+  
+  def migrated
+    sm_table = self.class.schema_migrations_table_name
+    plugin_name = self.class.current_plugin.name
+
+    ::ActiveRecord::Base.connection.select_values("SELECT version FROM #{sm_table} WHERE plugin_name = '#{plugin_name}'").map(&:to_i).sort
   end
   
   # Sets the version of the plugin in Engines::Plugin::Migrator.current_plugin to
   # the given version.
   def record_version_state_after_migrating(version)
-    ActiveRecord::Base.connection.update(<<-ESQL
-      UPDATE #{self.class.schema_info_table_name} 
-      SET version = #{down? ? version.to_i - 1 : version.to_i} 
-      WHERE plugin_name = '#{self.current_plugin.name}'
-    ESQL
-    )
+    sm_table = self.class.schema_migrations_table_name
+    plugin_name = self.class.current_plugin.name
+
+    if down?
+      ::ActiveRecord::Base.connection.update("DELETE FROM #{sm_table} WHERE version = '#{version}' AND plugin_name = '#{plugin_name}'")
+    else
+      ::ActiveRecord::Base.connection.insert("INSERT INTO #{sm_table} (plugin_name, version) VALUES ('#{plugin_name}', '#{version}')")
+    end
   end
 end

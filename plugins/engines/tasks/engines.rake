@@ -43,6 +43,25 @@ namespace :db do
       end
     end
 
+    desc 'For engines coming from Rails version < 2.0, you need to upgrade the schema info table'
+    task :fix_engines_migrations => :environment do
+      sm_table = Engines::Plugin::Migrator.schema_migrations_table_name
+      
+      Engines.plugins.each do |plugin|
+        current_version = ::Engines::Plugin::Migrator.current_version(plugin).to_i
+        
+        # We can see if it is one of the old migrations
+        if current_version >= 1 and current_version < 999
+          
+          # Insert version records for each migration
+          (1...current_version).each do |v|
+            ::ActiveRecord::Base.connection.insert("INSERT INTO #{sm_table} (plugin_name, version) VALUES ('#{plugin.name}', '#{v}')")
+          end
+          
+        end
+      end
+    end
+    
     desc 'Migrate a specified plugin.'
     task({:plugin => :environment}, :name, :version) do |task, args|
       name = args[:name] || ENV['NAME']
@@ -53,7 +72,7 @@ namespace :db do
       else
         puts "Plugin #{name} does not exist."
       end
-    end    
+    end
   end
 end
 
