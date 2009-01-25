@@ -47,9 +47,9 @@
 				</td>
 				<td>
 					<%
-						@image = item.product.images[0]
-						if @image then
-                                                       image_url = @image.public_filename(:thumb)
+					  if item.product && item.product.images[0]
+						  @image = item.product.images[0]
+              image_url = @image.public_filename(:thumb)
 							if image_url then
 					-%>
 							<%= image_tag image_url, :align => 'left', :style => 'margin:5px;' %>
