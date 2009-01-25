@@ -26,7 +26,7 @@ class StoreControllerTest < ActionController::TestCase
     get :index
     assert_response :success
     assert_template 'index'
-    assert_equal assigns(:title), "Store"
+    assert_equal "Store", assigns(:title)
     assert_not_nil assigns(:tags)
     assert_not_nil assigns(:products)
   end
@@ -37,10 +37,10 @@ class StoreControllerTest < ActionController::TestCase
     a_term = "an"
     get :search, :search_term => a_term
     assert_response :success
-    assert_equal assigns(:title), "Search Results for: #{a_term}"
+    assert_equal "Search Results for: #{a_term}", assigns(:title)
     # It should only list products, not variations.
     assert assigns(:products)
-    assert_equal assigns(:products).size, 2
+    assert_equal 2, assigns(:products).size
     assert_template 'index'
 
 
@@ -50,10 +50,10 @@ class StoreControllerTest < ActionController::TestCase
     assert_response :redirect
     assert_redirected_to :action => :show
     assert assigns(:products)
-    assert_equal assigns(:products).size, 1
+    assert_equal 1, assigns(:products).size
     
     follow_redirect
-    assert_equal assigns(:title), assigns(:products)[0].name
+    assert_equal assigns(:products)[0].name, assigns(:title)
   end
 
 
@@ -67,7 +67,7 @@ class StoreControllerTest < ActionController::TestCase
     a_tag = tags(:weapons)
     get :show_by_tags, :tags => [a_tag.name]
     assert_response :success
-    assert_equal assigns(:title), "Store #{assigns(:viewing_tags).collect { |t| ' > ' + t.name}}"
+    assert_equal "Store #{assigns(:viewing_tags).collect { |t| ' > ' + t.name}}", assigns(:title)
     assert assigns(:products)
     assert_template 'index'
 
@@ -76,7 +76,7 @@ class StoreControllerTest < ActionController::TestCase
     a_subtag = tags(:mass_destruction)
     get :show_by_tags, :tags => [a_tag.name, a_subtag.name]
     assert_response :success
-    assert_equal assigns(:title), "Store #{assigns(:viewing_tags).collect { |t| ' > ' + t.name}}"
+    assert_equal "Store #{assigns(:viewing_tags).collect { |t| ' > ' + t.name}}", assigns(:title)
     assert assigns(:products)
     assert_template 'index'
     
@@ -112,8 +112,8 @@ class StoreControllerTest < ActionController::TestCase
     assert_response :success
     assert_template 'show'
     assert_not_nil assigns(:product)
-    assert_equal assigns(:title), a_product.name
-    assert_equal assigns(:variations).size, 3
+    assert_equal a_product.name, assigns(:title)
+    assert_equal 3, assigns(:variations).size
 
 
     # Now with an invalid code.
@@ -145,7 +145,7 @@ class StoreControllerTest < ActionController::TestCase
     assert_response :redirect
     assert_redirected_to :action => :checkout
     a_cart = assigns(:order)
-    assert_equal a_cart.items.length, 1
+    assert_equal 1, a_cart.items.length
 
     # Try adding an invalid product.
     a_cart.empty!
@@ -167,14 +167,14 @@ class StoreControllerTest < ActionController::TestCase
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
     a_cart = assigns(:order)
-    assert_equal a_cart.items.length, 1
+    assert_equal 1, a_cart.items.length
 
     # Try adding a variation.
     a_variation = items(:red_lightsaber)
     xhr(:post, :add_to_cart_ajax, :variation => a_variation.id, :quantity => "2")
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
     a_cart = assigns(:order)
-    assert_equal a_cart.items.length, 2
+    assert_equal 2, a_cart.items.length
 
     # Try adding another product (that should not be available).
     a_product = items(:holy_grenade)
@@ -183,7 +183,13 @@ class StoreControllerTest < ActionController::TestCase
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
     a_cart = assigns(:order)
     # It should not have added anything.
-    assert_equal a_cart.items.length, 2
+    assert_equal 2, a_cart.items.length
+    
+    # Try adding a product with a non-numerical quantity
+    a_product = items(:towel)
+    xhr(:post, :add_to_cart_ajax, :id => a_product.id, :quantity => "a")
+    a_cart = assigns(:order)
+    assert_equal 2, a_cart.items.length
   end
   
   
@@ -194,13 +200,13 @@ class StoreControllerTest < ActionController::TestCase
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
     a_cart = assigns(:order)
-    assert_equal a_cart.items.length, 1
+    assert_equal 1, a_cart.items.length
 
     # Try removing a product.
     xhr(:post, :remove_from_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a window.location.reload() javascript function is executed.
     a_cart = assigns(:order)
-    assert_equal a_cart.items.length, 0
+    assert_equal 0, a_cart.items.length
     
     # Try removing an invalid product.
     # Make sure this id don't exist.
@@ -217,13 +223,13 @@ class StoreControllerTest < ActionController::TestCase
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
     a_cart = assigns(:order)
-    assert_equal a_cart.items.length, 1
+    assert_equal 1, a_cart.items.length
 
     xhr(:post, :empty_cart_ajax)
     # Here nothing is rendered directly, but a window.location.reload() javascript function is executed.
 
-    assert_equal assigns(:order).items.length, 0
-    assert_equal session[:order_id], nil
+    assert_equal 0, assigns(:order).items.length
+    assert_nil session[:order_id]
   end
 
 
@@ -234,14 +240,14 @@ class StoreControllerTest < ActionController::TestCase
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
     a_cart = assigns(:order)
-    assert_equal a_cart.items.length, 1
+    assert_equal 1, a_cart.items.length
 
     post :empty_cart
     assert_response :redirect
     assert_redirected_to :action => :index
 
-    assert_equal assigns(:order).items.length, 0
-    assert_equal session[:order_id], nil
+    assert_equal 0, assigns(:order).items.length
+    assert_nil session[:order_id]
   end
 
 
@@ -255,8 +261,8 @@ class StoreControllerTest < ActionController::TestCase
     assert_response :redirect
     assert_redirected_to :action => :index
 
-    assert_equal assigns(:order).items.length, 0
-    assert_equal session[:order_id], nil
+    assert_equal 0, assigns(:order).items.length
+    assert_nil session[:order_id]
     
     # Assert the order was destroyed.
     assert_raise(ActiveRecord::RecordNotFound) {
@@ -270,7 +276,7 @@ class StoreControllerTest < ActionController::TestCase
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
     a_cart = assigns(:order)
-    assert_equal a_cart.items.length, 1
+    assert_equal 1, a_cart.items.length
 
     post(
       :checkout,
@@ -309,13 +315,13 @@ class StoreControllerTest < ActionController::TestCase
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
     a_cart = assigns(:order)
-    assert_equal a_cart.items.length, 1
+    assert_equal 1, a_cart.items.length
 
     get :checkout
     assert_response :success
     assert_template 'checkout'
     assert_layout 'checkout'
-    assert_equal assigns(:title), "Please enter your information to continue this purchase."
+    assert_equal "Please enter your information to continue this purchase.", assigns(:title)
     assert_not_nil assigns(:cc_processor)
     
     # Post to it an order.
@@ -348,7 +354,7 @@ class StoreControllerTest < ActionController::TestCase
     assert_response :success
     assert_layout 'checkout'
     assert_template 'checkout'
-    assert_equal assigns(:title), "Please enter your information to continue this purchase."
+    assert_equal "Please enter your information to continue this purchase.", assigns(:title)
     assert_not_nil assigns(:cc_processor)
     
     # Post it again with the order already saved.
@@ -385,12 +391,12 @@ class StoreControllerTest < ActionController::TestCase
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
     a_cart = assigns(:order)
-    assert_equal a_cart.items.length, 1
+    assert_equal 1, a_cart.items.length
 
     get :checkout
     assert_response :success
     assert_template 'checkout'
-    assert_equal assigns(:title), "Please enter your information to continue this purchase."
+    assert_equal "Please enter your information to continue this purchase.", assigns(:title)
     assert_not_nil assigns(:cc_processor)
     
     # Post to it an order.
@@ -424,12 +430,12 @@ class StoreControllerTest < ActionController::TestCase
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
     a_cart = assigns(:order)
-    assert_equal a_cart.items.length, 1
+    assert_equal 1, a_cart.items.length
 
     get :checkout
     assert_response :success
     assert_template 'checkout'
-    assert_equal assigns(:title), "Please enter your information to continue this purchase."
+    assert_equal "Please enter your information to continue this purchase.", assigns(:title)
     assert_not_nil assigns(:cc_processor)
     
     # Post to it an order.
@@ -453,7 +459,7 @@ class StoreControllerTest < ActionController::TestCase
     get :checkout
     assert_response :success
     assert_template 'checkout'
-    assert_equal assigns(:title), "Please enter your information to continue this purchase."
+    assert_equal "Please enter your information to continue this purchase.", assigns(:title)
     assert_not_nil assigns(:cc_processor)
     
     # Post it again with the order already saved.
@@ -479,12 +485,12 @@ class StoreControllerTest < ActionController::TestCase
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
     a_cart = assigns(:order)
-    assert_equal a_cart.items.length, 1
+    assert_equal 1, a_cart.items.length
 
     get :checkout
     assert_response :success
     assert_template 'checkout'
-    assert_equal assigns(:title), "Please enter your information to continue this purchase."
+    assert_equal "Please enter your information to continue this purchase.", assigns(:title)
     assert_not_nil assigns(:cc_processor)
     
     # Post to it an order.
@@ -539,7 +545,7 @@ class StoreControllerTest < ActionController::TestCase
     assert_select "div#flash" do
       assert_select "div", :text => /There are no items in your order./
     end
-    assert_equal assigns(:title), "Store"
+    assert_equal "Store", assigns(:title)
   end
   
   
@@ -557,7 +563,7 @@ class StoreControllerTest < ActionController::TestCase
     get :checkout
     assert_response :success
     assert_template 'checkout'
-    assert_equal assigns(:title), "Please enter your information to continue this purchase."
+    assert_equal "Please enter your information to continue this purchase.", assigns(:title)
     assert_not_nil assigns(:cc_processor)
     
     # Post to it an order.
@@ -598,7 +604,7 @@ class StoreControllerTest < ActionController::TestCase
     get :select_shipping_method
     assert_response :success
     assert_template 'select_shipping_method'
-    assert_equal assigns(:title), "Select Your Shipping Method - Step 2 of 3"
+    assert_equal "Select Your Shipping Method - Step 2 of 3", assigns(:title)
     assert_not_nil assigns(:default_price)
   end
   
@@ -631,7 +637,7 @@ class StoreControllerTest < ActionController::TestCase
     assert_redirected_to :action => :confirm_order
     follow_redirect
     assert_template 'confirm_order'
-    assert_equal assigns(:title), "Please confirm your order. - Step 3 of 3"
+    assert_equal "Please confirm your order. - Step 3 of 3", assigns(:title)
   end
 
 
@@ -717,7 +723,7 @@ class StoreControllerTest < ActionController::TestCase
 
     # Quantity should NOT be updated.
     an_order_line_item.item.reload
-    assert_equal an_order_line_item.item.quantity, initial_quantity
+    assert_equal initial_quantity, an_order_line_item.item.quantity
   end
   
   # Test the finish order action.
@@ -767,7 +773,7 @@ class StoreControllerTest < ActionController::TestCase
 
     # Quantity should NOT be updated.
     an_order_line_item.item.reload
-    assert_equal an_order_line_item.item.quantity, initial_quantity
+    assert_equal initial_quantity, an_order_line_item.item.quantity
   end
   
   
@@ -793,7 +799,7 @@ class StoreControllerTest < ActionController::TestCase
 
     # Quantity should NOT be updated.
     an_order_line_item.item.reload
-    assert_equal an_order_line_item.item.quantity, initial_quantity
+    assert_equal initial_quantity, an_order_line_item.item.quantity
   end
 
   

@@ -41,6 +41,23 @@ class OrderLineItemTest < ActiveSupport::TestCase
     }
   end
 
+  # Test valid order_line_item quantities
+  def test_order_line_item_quantity_is_postive
+    a_towel = items(:towel)
+    an_order_line_item = OrderLineItem.for_product(a_towel)
+    an_order_line_item.quantity = -1;
+    assert_raise(ActiveRecord::RecordInvalid) { 
+      an_order_line_item.save!
+    }
+    an_order_line_item.quantity = 0
+    assert_raise(ActiveRecord::RecordInvalid) {
+      an_order_line_item.save!
+    }
+    an_order_line_item.quantity = 1
+    assert_nothing_raised {
+      an_order_line_item.save!
+    }
+  end
 
   # TODO: I think that all these methods should be protected.
   # Theres no much things to play with, as an order line item should only reflect an item,

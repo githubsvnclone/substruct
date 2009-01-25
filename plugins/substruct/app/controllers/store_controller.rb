@@ -173,19 +173,23 @@ class StoreController < ApplicationController
 	  else
 		  product = Product.find(params[:id])
 		end
-		quantity = params[:quantity]
-		quantity ||= 1
+		
+		begin
+		  quantity = params[:quantity].to_int
+		rescue NoMethodError
+		  quantity = (params[:quantity].to_i != 0) ? params[:quantity].to_i : 1
+	  end
 		
 		logger.info "QUANTITY: #{quantity}"
 	  logger.info "PRODUCT QUANTITY: #{product.quantity}"
 	  logger.info "Quantity too much? #{(quantity.to_i > product.quantity.to_i)}"
 	  
 		# Checks quantity against available.
-		if quantity.to_i > product.quantity.to_i
+		if quantity > product.quantity.to_i
 		  logger.info "There's an error adding to the cart..."
 		  render :nothing => true, :status => 400 and return
 		else
-  		@order.add_product(product, quantity.to_i)
+  		@order.add_product(product, quantity)
   		logger.info "Product added...success"
   		render :partial => 'cart' and return
   	end

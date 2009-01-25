@@ -348,6 +348,9 @@ class Order < ActiveRecord::Base
 
   # Adds a product to our shopping cart
   def add_product(product, quantity=1)
+    if quantity < 0
+      remove_product(product, quantity.abs) and return
+    end
     item = self.order_line_items.find(
       :first,
       :conditions => ["item_id = ?", product.id]

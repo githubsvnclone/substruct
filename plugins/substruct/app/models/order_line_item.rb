@@ -3,6 +3,9 @@ class OrderLineItem < ActiveRecord::Base
   belongs_to :item
   belongs_to :order
   alias_attribute :price, :unit_price
+  
+ validates_numericality_of :quantity, :greater_than_or_equal_to => 1, :only_integer => true, :message => "must be positive"
+  
   # Creates and returns a line item when a product is passed in
   def self.for_product(item)
     ol_item = self.new

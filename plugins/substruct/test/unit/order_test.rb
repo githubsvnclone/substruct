@@ -1294,6 +1294,19 @@ class OrderTest < ActiveSupport::TestCase
     assert_equal 1, a_cart.items.length
     assert_equal 4, a_cart.items[0].quantity
   end
+  
+  # Test if a add_product properly handles negative quantities
+  def test_add_product_with_negative_quantity
+    a_cart = Order.new
+    a_cart.add_product(items(:blue_lightsaber), 2)
+    a_cart.add_product(items(:blue_lightsaber), -1)
+    a_cart.reload
+    # Calling add_product with a negative quantity should remove that many units
+    assert_equal 1, a_cart.items[0].quantity
+    a_cart.add_product(items(:blue_lightsaber), -3)    
+#    a_cart.reload
+    assert a_cart.empty?
+  end
 
   # Test if a product can be removed from the cart.
   def test_remove_product
