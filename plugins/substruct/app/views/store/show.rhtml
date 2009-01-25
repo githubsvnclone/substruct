@@ -50,10 +50,10 @@
 	
 	<% 
 		# ITEM IS OUT OF STOCK
-		if 0 >= @product.quantity 
+		if (Preference.find_by_name('store_use_inventory_control').is_true? && 0 >= @product.quantity )
 	%>
 		<br/>
-		<h3>Item is out of stock</h3>
+		<h3 id="out_of_stock">Item is out of stock</h3>
 	<%
 	 	# ITEM OR ONE OF ITS VARIATIONS IN STOCK
 		else 
@@ -62,7 +62,7 @@
 		<%=
 			form_remote_tag(
 				:url=> { :controller=>'store', :action=>'add_to_cart_ajax', :id => @product.id },
-				:html => {:name => 'add_product_form'},
+				:html => {:name => 'add_product_form', :id => 'add_to_cart_form'},
 				:complete => "showPopWin('/store/show_cart', 600, 400, null, true)",
 				:failure => 'alert("That item appears to have gone out of stock before you were able to add it to your cart.\n\nPlease refresh this page.")',
 				:update => 'items'

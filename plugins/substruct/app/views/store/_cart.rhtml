@@ -45,18 +45,20 @@
 					<br/>
 					<div style="height:50px;">
 						<%
-							@image = item.product.images[0]
-							if @image then
-                                                               image_url = @image.public_filename(:thumb)
-								if image_url then
+						if item.product && item.product.images[0]
+						  @image = item.product.images[0]
+              image_url = @image.public_filename(:thumb)
+							if image_url then
 						-%>
 								<%= image_tag image_url %>
 						<%
-								end
-							else
+					    end
+						else
 						%>
 							<%= image_tag "/public/no_image_50.png", :plugin => 'substruct' %>
-						<% end %>
+						<% 
+						end 
+						%>
 					</div>
 					<span class="info"><%= link_to_remote 'Remove',
 							:url => {

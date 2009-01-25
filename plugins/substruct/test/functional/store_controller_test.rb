@@ -124,6 +124,26 @@ class StoreControllerTest < ActionController::TestCase
     assert_select "p", :text => /Sorry, we couldn/
   end
   
+  # If inventory control is disabled, you should be able to purchase a product if quantity
+  # is set to any amount.
+  def test_show_product_inventory_control    
+    product = items(:uranium_portion)
+    assert product.update_attribute('quantity', 0)
+    assert_equal 0, product.reload.quantity
+    
+    # Inventory control enabled
+    assert Preference.find_by_name('store_use_inventory_control').update_attribute('value', 1)
+    get :show, :id => product.code
+    assert_response :success
+    assert_select "h3#out_of_stock"
+    
+    # Inventory control DISABLED
+    assert Preference.find_by_name('store_use_inventory_control').update_attribute('value', 0)
+    get :show, :id => product.code
+    assert_response :success
+    assert_select "h3#out_of_stock", false
+    assert_select "form#add_to_cart_form"
+  end
   
   # Test the show cart action. This is the action that shows the modal cart.
   def test_should_show_cart
@@ -190,6 +210,24 @@ class StoreControllerTest < ActionController::TestCase
     xhr(:post, :add_to_cart_ajax, :id => a_product.id, :quantity => "a")
     a_cart = assigns(:order)
     assert_equal 2, a_cart.items.length
+  end
+  
+  def test_add_to_cart_inventory_control
+    product = items(:uranium_portion)
+    assert product.update_attribute('quantity', 0)
+    assert_equal 0, product.reload.quantity
+
+    # Inventory control enabled
+    assert Preference.find_by_name('store_use_inventory_control').update_attribute('value', 1)
+    xhr(:post, :add_to_cart_ajax, :id => product.id, :quantity => "1")
+    cart = assigns(:order)
+    assert_equal 0, cart.items.length
+    
+    # Inventory control DISABLED
+    assert Preference.find_by_name('store_use_inventory_control').update_attribute('value', 0)
+    xhr(:post, :add_to_cart_ajax, :id => product.id, :quantity => "1")
+    cart = assigns(:order)
+    assert_equal 1, cart.items.length
   end
   
   

@@ -185,7 +185,7 @@ class StoreController < ApplicationController
 	  logger.info "Quantity too much? #{(quantity.to_i > product.quantity.to_i)}"
 	  
 		# Checks quantity against available.
-		if quantity > product.quantity.to_i
+		if (Preference.find_by_name('store_use_inventory_control').is_true? && quantity > product.quantity.to_i)
 		  logger.info "There's an error adding to the cart..."
 		  render :nothing => true, :status => 400 and return
 		else
