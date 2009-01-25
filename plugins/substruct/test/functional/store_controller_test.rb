@@ -264,6 +264,43 @@ class StoreControllerTest < ActionController::TestCase
     }
   end
   
+  def test_checkout_error_layout
+    # Add a product to the cart.
+    a_product = items(:towel)
+    xhr(:post, :add_to_cart_ajax, :id => a_product.id)
+    # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
+    a_cart = assigns(:order)
+    assert_equal a_cart.items.length, 1
+
+    post(
+      :checkout,
+      :order_account => {
+        :cc_number => "",
+        :expiration_year => "",
+        :expiration_month => ""
+      },
+      :shipping_address => {
+        :city => "",
+        :zip => "",
+        :country_id => countries(:US).id,
+        :first_name => "",
+        :telephone => "",
+        :last_name => "",
+        :address => "",
+        :state => ""
+      },
+      :billing_address => @scrooge_address.attributes,
+      :order_user => {
+        :email_address => ""
+      }
+    )
+    assert_response :success
+    assert_select "div#flash" do
+      assert_select "div", :text => /There were some problems with the information you entered/
+    end
+    assert_layout 'checkout'
+  end
+  
   
   # Test the checkout action.
   def test_should_checkout
@@ -277,37 +314,39 @@ class StoreControllerTest < ActionController::TestCase
     get :checkout
     assert_response :success
     assert_template 'checkout'
+    assert_layout 'checkout'
     assert_equal assigns(:title), "Please enter your information to continue this purchase."
     assert_not_nil assigns(:cc_processor)
     
     # Post to it an order.
-    post :checkout,
-    :order_account => {
-      :cc_number => "4007000000027",
-      :expiration_year => 4.years.from_now.year,
-      :expiration_month => "1"
-    },
-    :shipping_address => {
-      :city => "",
-      :zip => "",
-      :country_id => countries(:US).id,
-      :first_name => "",
-      :telephone => "",
-      :last_name => "",
-      :address => "",
-      :state => ""
-    },
-    :billing_address => @scrooge_address.attributes,
-    :order_user => {
-      :email_address => "uncle.scrooge@whoknowswhere.com"
-    }
-    
+    post(
+      :checkout,
+      :order_account => {
+        :cc_number => "4007000000027",
+        :expiration_year => 4.years.from_now.year,
+        :expiration_month => "1"
+      },
+      :shipping_address => {
+        :city => "",
+        :zip => "",
+        :country_id => countries(:US).id,
+        :first_name => "",
+        :telephone => "",
+        :last_name => "",
+        :address => "",
+        :state => ""
+      },
+      :billing_address => @scrooge_address.attributes,
+      :order_user => {
+        :email_address => "uncle.scrooge@whoknowswhere.com"
+      }
+    )
     assert_response :redirect
     assert_redirected_to :action => :select_shipping_method
 
     get :checkout
     assert_response :success
-
+    assert_layout 'checkout'
     assert_template 'checkout'
     assert_equal assigns(:title), "Please enter your information to continue this purchase."
     assert_not_nil assigns(:cc_processor)

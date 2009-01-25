@@ -465,7 +465,7 @@ class StoreController < ApplicationController
       logger.error "#{$!}\n\n#{stack_trace}\n"
       @shipping_address = OrderAddress.new unless @use_separate_shipping_address
       flash.now[:notice] = 'There were some problems with the information you entered.<br/><br/>Please look at the fields below.'
-      render and return
+      render :layout => 'checkout' and return
     end
 
     # Stubbed to be overridden in your custom controller if tax

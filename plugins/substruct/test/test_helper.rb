@@ -58,6 +58,12 @@ def assert_same_elements(an_array, another_array)
   assert_equal an_array - another_array, another_array - an_array
 end
 
+# Assertion to test layout for controllers
+def assert_layout(layout)
+  assert_equal "layouts/#{layout}", @response.layout
+end
+
+
 # The assert_working_associations method simply walks through all of the 
 # associations on the class and sends the model the name of the association.
 # This catch-all ensures that with a single line of code per model, 
