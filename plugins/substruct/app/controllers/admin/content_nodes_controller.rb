@@ -173,7 +173,11 @@ class Admin::ContentNodesController < Admin::BaseController
           if new_file.save!
             files_saved += 1
           end
-          @content_node.content.gsub!("[file#{files_saved}]", new_file.public_filename)
+          @content_node.content = @content_node.content.gsub(
+            "[file#{files_saved}]",
+            new_file.public_filename
+          )
+          #@content_node.content.gsub!("[file#{files_saved}]", new_file.public_filename)
         end
       end
       if files_saved > 0
