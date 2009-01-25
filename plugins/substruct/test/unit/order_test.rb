@@ -1334,6 +1334,17 @@ class OrderTest < ActiveSupport::TestCase
     assert_equal a_cart.items.length, 1
   end
   
+  def test_check_inventory_with_promotion
+    # Create cart, add item & promotion
+    a_cart = Order.new
+    a_cart.add_product(items(:red_lightsaber), 2)
+    a_cart.promotion_code = "FIXED_REBATE"
+    assert a_cart.save
+    assert_nothing_raised do
+      a_cart.check_inventory
+    end
+  end
+  
   
   # Test if will return the total price of products in the cart.
   def test_return_total_price

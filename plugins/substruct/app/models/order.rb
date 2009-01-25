@@ -411,7 +411,8 @@ class Order < ActiveRecord::Base
 	  removed_items = []
 	  self.order_line_items.each do |oli|
 	    # Find the item in the db, because oli.item is cached.
-	    db_item = Item.find(oli.item_id)
+	    db_item = Item.find_by_id(oli.item_id)
+	    next unless db_item # Skip promo items
 	    if oli.quantity > db_item.quantity
 	      removed_items << oli.name.clone
 	      self.order_line_items.delete(oli)
