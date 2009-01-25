@@ -47,7 +47,10 @@ class OrderAccount < ActiveRecord::Base
   def validate
     today = DateTime.now
     begin
-      if (today.month > self.expiration_month && today.year >= self.expiration_year)
+      if (
+        (today.month > self.expiration_month && today.year >= self.expiration_year) ||
+        (today.year > self.expiration_year)
+      )
         errors.add(:expiration_month, 'Please enter a valid expiration date.')
       end
     rescue
