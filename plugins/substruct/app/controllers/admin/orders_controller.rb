@@ -219,8 +219,14 @@ class Admin::OrdersController < Admin::BaseController
       redirect_to :action => 'show', :id => @order.id
     rescue
       @products = Product.find(:all)
-  		@shipping_address = OrderAddress.new unless @use_separate_shipping_address
-			flash[:notice] = 'There were problems modifying the order.'
+  	  if !@use_separate_shipping_address && @shipping_address.nil?
+  		  @shipping_address = @order.shipping_address
+  		else
+  		  @shipping_address = OrderAddress.new
+  	  end
+  		logger.info "BILLING ADDRESS: \n#{@billing_address}"
+  		logger.info "SHIPPING ADDRESS: \n#{@shipping_address}"
+			flash.now[:notice] = 'There were problems modifying the order. Please check the fields below.'
       render :action => 'edit' and return
     end
   end

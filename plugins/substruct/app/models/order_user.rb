@@ -27,10 +27,11 @@ class OrderUser < ActiveRecord::Base
 	  :message => %q/
 	    This email address has already been taken in our system.<br\/>
 	    If you have already ordered with us, please login.
-	  /
+	  /,
+	  :if => Proc.new { Preference.find_by_name('store_require_login').is_true? }
 	validates_format_of :email_address,
-	                    :with => /^([^@\s]+)@((?:[-a-zA-Z0-9]+\.)+[a-zA-Z]{2,})$/,
-	                    :message => "Please enter a valid email address."
+	  :with => /^([^@\s]+)@((?:[-a-zA-Z0-9]+\.)+[a-zA-Z]{2,})$/,
+	  :message => "Please enter a valid email address."
 
                       
   # We don't save passwords all the time when creating an account.
