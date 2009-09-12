@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
-class OrdersMailerTest < ActiveSupport::TestCase
+class OrdersMailerTest < ActionMailer::TestCase
   fixtures :orders, :order_line_items, :order_addresses, :order_users, :order_shipping_types, :items
   fixtures :order_accounts, :order_status_codes, :countries, :promotions, :preferences
 
@@ -46,7 +46,7 @@ class OrdersMailerTest < ActiveSupport::TestCase
    
     receipt_body = ContentNode.find(:first, :conditions => ["name = ?", 'OrderReceipt'])
 
-    response_mail = OrdersMailer.create_receipt(an_order, receipt_body.content)
+    response_mail = ActionMailer::Base.deliveries.first
     
     assert_equal response_mail.subject, "Thank you for your order! (\##{an_order.order_number})"
     assert_match /Order #: #{an_order.order_number}/, response_mail.body
@@ -85,20 +85,20 @@ class OrdersMailerTest < ActiveSupport::TestCase
     ActiveMerchant::Billing::AuthorizeNetGateway.any_instance.stubs(:purchase).returns(a_negative_response)
 
     # Assert that with a failure response the method will return the response message.
-    assert_equal an_order.run_transaction_authorize, a_negative_response.message
-   
-    response_mail = OrdersMailer.create_failed(an_order)
+    assert_equal an_order.run_transaction_authorize, a_negative_response.message    
+    assert_equal ActionMailer::Base.deliveries.length, initial_mbox_length + 1
+    
+    response_mail = ActionMailer::Base.deliveries.first
     
     assert_equal response_mail.subject, 'An order has failed on the site'
     assert_match /Order #: #{an_order.order_number}/, response_mail.body
     assert_equal response_mail.to.to_a, Preference.find_by_name('mail_copy_to').value.split(',')
     
-    assert_equal ActionMailer::Base.deliveries.length, initial_mbox_length + 1
   end
 
 
-  # Test a mail delivery when the password is reseted.
-  def dont_test_reset_password
+  # Test a mail delivery when the password is reset.
+  def test_reset_password
     initial_mbox_length = ActionMailer::Base.deliveries.length
 
     # Get an user to reset the password. 
@@ -110,9 +110,18 @@ class OrdersMailerTest < ActiveSupport::TestCase
     assert_match /Your password has been reset/, response_mail.body
     assert_equal response_mail.to.to_a, [an_order_user.email_address]
 
-    # We should have received a mail about that.
-    assert_equal ActionMailer::Base.deliveries.length, initial_mbox_length + 1
+    # We should have received a mail about that, except we used create_reset_password instead of deliver_reset_password, above
+    # assert_equal ActionMailer::Base.deliveries.length, initial_mbox_length + 1
   end
-
+  
+  def test_test_email
+    Preference.save_setting 'mail_username' => 'fred@fred.com'
+    @expected.from    = 'fred@fred.com'
+    @expected.to      = Preference.find_by_name('mail_copy_to').value.split(',')
+    @expected.subject = "Test from #{Preference.find_by_name('store_name').value}"
+    @expected.body    = "This is a test email! Apparently it worked, if you receive this email."
+    @expected.date    = Time.now
+    assert_equal @expected.encoded, OrdersMailer.create_testing(Preference.find_by_name('mail_copy_to').value.split(',')).encoded
+  end
 
 end

@@ -63,6 +63,13 @@ class Preference < ActiveRecord::Base
     end
   end
   
+  # Save a preference
+  # like 'store_something' => true
+  # LTODO it is a rails bug not accept symbols here?
+  def self.save_setting hash
+    self.save_settings hash
+  end
+  
   # Determines if a preference is "true" or not.
   # This is the ghetto, bootleg way to determine booleans.
   def is_true?
