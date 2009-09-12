@@ -100,6 +100,7 @@ class OrderUserTest < ActiveSupport::TestCase
 
     # An order user must have an unique email address.
     an_order_user.email_address = "santa.claus@whoknowswhere.com"
+    Preference.save_setting 'store_require_login' => 1
     assert !an_order_user.valid?
     assert an_order_user.errors.invalid?(:email_address)
     assert_equal "\n\t    This email address has already been taken in our system.<br/>\n\t    If you have already ordered with us, please login.\n\t  ", an_order_user.errors.on(:email_address)
