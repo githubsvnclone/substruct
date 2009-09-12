@@ -39,6 +39,24 @@ class OrderAddressTest < ActiveSupport::TestCase
   # Test if a address can be updated with success.
   def test_should_update_address
     an_address = order_addresses(:santa_address)
+    # first fix the zip
+    an_address.zip = '90210'
+    assert an_address.update_attributes(:address => 'After third ice mountain at left')
+  end
+  
+  def test_invalid_zip
+    an_address = order_addresses(:santa_address)
+    # should fail--starts with invalid zip
+    assert !an_address.update_attributes(:address => 'After third ice mountain at left')
+    an_address.zip = '90210'
+    assert an_address.update_attributes(:address => 'After third ice mountain at left')
+    
+    # another invalid zip
+    an_address.zip = '90a10'
+    assert !an_address.update_attributes(:address => 'After third ice mountain at left')
+    
+    # with a non US address it should validate, though
+    an_address.country = countries(:GB)
     assert an_address.update_attributes(:address => 'After third ice mountain at left')
   end
 

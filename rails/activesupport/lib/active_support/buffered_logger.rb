@@ -55,7 +55,7 @@ module ActiveSupport
     end
 
     def set_non_blocking_io
-      if !RUBY_PLATFORM.match(/java|mswin/) && !(@log == STDOUT) && @log.respond_to?(:write_nonblock)
+      if !RUBY_PLATFORM.match(/java|mswin|mingw/) && !(@log == STDOUT) && @log.respond_to?(:write_nonblock)
         @no_block = true
       end
     end
