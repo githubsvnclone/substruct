@@ -65,8 +65,8 @@ class Preference < ActiveRecord::Base
   
   # Save a preference
   # like 'store_something' => true
-  # LTODO it is a rails bug not accept symbols here?
-  def self.save_setting hash
+  # LTODO it is a rails bug not accept symbols here? (it doesn't--only strings)
+  def self.save_setting(hash)
     self.save_settings hash
   end
   
