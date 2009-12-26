@@ -15,26 +15,19 @@ namespace :substruct do
   Remember to pass it the proper RAILS_ENV if running from cron.
   \
   task :maintain => :environment do
-    puts "Updating country order counts..."
-    countries = Country.find(:all)
-    countries.each { |c|
-      sql = "SELECT COUNT(*) "
-      sql << "FROM order_addresses "
-      sql << "WHERE country_id = ?"
-      c.number_of_orders = ActiveRecord::Base.count_by_sql([sql, c.id])
-      c.save
-    }
-
     puts "Updating product costs..."
     orders = Order.find(:all, :conditions => "product_cost = 0")
     orders.each { |order|
-      order.product_cost = order.line_items_total
-      order.save
+     order.product_cost = order.line_items_total
+     order.save
     }
 
     puts "Removing crusty sessions..."
     stale = Session.find(:all, :conditions => ["updated_at <= ?", Time.now - Session::SESSION_TIMEOUT])
     stale.each { |s| s.destroy }
+
+		# Clear out empty CART orders older than a day.
+    Order.destroy_old_carts
   end
   
   # DATABASE ==================================================================

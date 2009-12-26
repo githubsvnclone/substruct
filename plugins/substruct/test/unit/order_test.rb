@@ -1,7 +1,12 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class OrderTest < ActiveSupport::TestCase
-  fixtures :all
+  fixtures(
+    :orders, :order_status_codes, :order_users, :order_accounts, 
+    :order_shipping_types, :order_shipping_weights,
+    :order_line_items, :order_addresses, 
+    :items, :countries, :promotions, :preferences
+  )
   
   def setup
     @santa_order = orders(:santa_next_christmas_order)
@@ -70,6 +75,21 @@ class OrderTest < ActiveSupport::TestCase
     assert_raise(ActiveRecord::RecordNotFound) {
       Order.find(an_order.id)
     }
+  end
+  
+  def test_destroy_old_carts
+    # Make an old, empty CART item
+    old_cart = Order.new(
+      :order_status_code => order_status_codes(:cart),
+      :product_cost => 0,
+      :created_on => Time.now - 1.day
+    )
+    assert old_cart.save
+    old_cart_id = old_cart.reload.id
+    assert_difference "Order.count", -1 do
+      Order.destroy_old_carts
+    end
+    assert_nil Order.find_by_id(old_cart_id)
   end
 
 

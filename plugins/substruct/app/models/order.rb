@@ -201,6 +201,15 @@ class Order < ActiveRecord::Base
 		  find_by_sql(arg_arr)
 	  end
   end
+  
+  # Removes any empty CARTS that are older than a day
+  def self.destroy_old_carts
+    Order.destroy_all(%Q\
+  		order_status_code_id = 1 
+  		AND DATE(created_on) < CURRENT_DATE 
+  		AND product_cost = 0
+  	\)
+  end
 
   # Generates a unique order number.
   # This number isn't ID because we want to mask that from the customers.
@@ -341,6 +350,107 @@ class Order < ActiveRecord::Base
 	  xml << "</orders>\n"
 	  return xml
 	end
+	
+	# Check to see which cc processor is used
+  def self.get_cc_processor
+    Preference.find_by_name('cc_processor').value
+  end
+
+  # Get the login info for the cc processor (if any)
+  def self.get_cc_login
+    Preference.find_by_name('cc_login').value
+  end
+
+  # PAYPAL IPN verification and execution -------------------------------------
+
+  def self.matches_ipn(notification, order, details)
+    # Compare the information in the notification with the order.  The
+    # Paypal::Notification object doesn't provide everything we want to verify
+    # so we need to dig into the params[] array too.
+
+    passed = true  #gives an inital clean slate
+
+    # On occasion, an order will not be rounded to 2 decimal places
+    if (order.total.to_f*100).round/100.00 != notification.gross.to_f
+      passed = false 
+
+      logger.error(">>>The total passed back from PayPal doesn't match the
+                    total for invoice number #{notification.invoice}.
+		    Order total is #{((order.total.to_f*100).round/100.00).to_s} 
+		    and PayPal returned
+		    #{notification.gross.to_s}")
+    end
+
+    if details[:business] != Preference.find_by_name('cc_login').value
+      passed = false
+      logger.error(">>>The business address passed back from PayPal is not 
+                    correct.  This likely means someone else ate your lunch.")
+    end
+
+    if Order.find_by_auth_transaction_id(details[:txn_id])
+      passed = false
+      logger.error(">>>The authorization ID passed back from PayPal already
+                    exists in our database.  This would indicate that the
+		    user has used information from a previous transaction
+		    to spoof a new one.")
+    end
+
+    logger.error(">>>PAYPAL FRAUD DETECTED! Please investigate<<<") if !passed
+
+    # PayPal also allows purchasers to add special instructions to sellers. We
+    # should capture this and add it to the order notes
+
+    if details[:memo] && details[:memo].length > 0
+      order.new_notes = "CUSTOMER REMARKS: "+details[:memo]
+    end
+
+    if details[:address_street] && 
+       details[:address_street] != order.shipping_address.address
+      order.new_notes = %Q\
+        The shipping address supplied by PayPal doesn't match
+        the shipping address for this order. PayPal
+  			sent the following address:<br/>
+  			#{details[:address_street]}<br/>
+  			#{details[:address_city]}, #{details[:address_state]}<br/>
+  			#{details[:address_zip]}<br/>
+  			<b>Please contact the customer for clarification.<b>
+			\
+    end
+
+    passed
+
+  end
+
+  def self.pass_ipn(order, auth_id)
+    order.order_status_code_id = 5
+    order.new_notes = "Order paid through PayPal.  Ready to ship."
+    order.auth_transaction_id = auth_id
+    # Set completed
+    order.cleanup_successful
+    # Send success message
+    begin
+      order.deliver_receipt
+    rescue => e
+      logger.error("FAILED TO SEND THE CONFIRM EMAIL: #{e}")
+    end
+    order.save
+  end
+
+  def self.fail_ipn(order)
+    #TODO - create a custom id for fraud.
+    message = "FRAUD ALERT -- please investigate."
+    order.order_status_code_id = 3
+    order.new_notes = message
+    order.cleanup_failed(message)
+    # Send failed message
+    begin
+      order.deliver_failed 
+    rescue => e
+      logger.error("FAILED TO SEND THE CONFIRM EMAIL: #{e}")
+    end
+    order.save
+  end
+	
 
   # INSTANCE METHODS ==========================================================
 
@@ -599,16 +709,6 @@ class Order < ActiveRecord::Base
     end
   end
  
-  # Check to see which cc processor is used
-  def self.get_cc_processor
-    Preference.find_by_name('cc_processor').value
-  end
-
-  # Get the login info for the cc processor (if any)
-  def self.get_cc_login
-    Preference.find_by_name('cc_login').value
-  end
-
   # Runs an order through Authorize.net
   #
   # Returns true 
@@ -756,94 +856,4 @@ class Order < ActiveRecord::Base
     false
   end
 
-
-#================== paypal IPN verification and execution ======================
-
-  def self.matches_ipn(notification, order, details)
-    # Compare the information in the notification with the order.  The
-    # Paypal::Notification object doesn't provide everything we want to verify
-    # so we need to dig into the params[] array too.
-
-    passed = true  #gives an inital clean slate
-
-    # On occasion, an order will not be rounded to 2 decimal places
-    if (order.total.to_f*100).round/100.00 != notification.gross.to_f
-      passed = false 
-
-      logger.error(">>>The total passed back from PayPal doesn't match the
-                    total for invoice number #{notification.invoice}.
-		    Order total is #{((order.total.to_f*100).round/100.00).to_s} 
-		    and PayPal returned
-		    #{notification.gross.to_s}")
-    end
-
-    if details[:business] != Preference.find_by_name('cc_login').value
-      passed = false
-      logger.error(">>>The business address passed back from PayPal is not 
-                    correct.  This likely means someone else ate your lunch.")
-    end
-
-    if Order.find_by_auth_transaction_id(details[:txn_id])
-      passed = false
-      logger.error(">>>The authorization ID passed back from PayPal already
-                    exists in our database.  This would indicate that the
-		    user has used information from a previous transaction
-		    to spoof a new one.")
-    end
-
-    logger.error(">>>PAYPAL FRAUD DETECTED! Please investigate<<<") if !passed
-
-    # PayPal also allows purchasers to add special instructions to sellers. We
-    # should capture this and add it to the order notes
-
-    if details[:memo] && details[:memo].length > 0
-      order.new_notes = "CUSTOMER REMARKS: "+details[:memo]
-    end
-
-    if details[:address_street] && 
-       details[:address_street] != order.shipping_address.address
-      order.new_notes = %Q\
-        The shipping address supplied by PayPal doesn't match
-        the shipping address for this order. PayPal
-  			sent the following address:<br/>
-  			#{details[:address_street]}<br/>
-  			#{details[:address_city]}, #{details[:address_state]}<br/>
-  			#{details[:address_zip]}<br/>
-  			<b>Please contact the customer for clarification.<b>
-			\
-    end
-
-    passed
-
-  end
-
-  def self.pass_ipn(order, auth_id)
-    order.order_status_code_id = 5
-    order.new_notes = "Order paid through PayPal.  Ready to ship."
-    order.auth_transaction_id = auth_id
-    # Set completed
-    order.cleanup_successful
-    # Send success message
-    begin
-      order.deliver_receipt
-    rescue => e
-      logger.error("FAILED TO SEND THE CONFIRM EMAIL: #{e}")
-    end
-    order.save
-  end
-
-  def self.fail_ipn(order)
-    #TODO - create a custom id for fraud.
-    message = "FRAUD ALERT -- please investigate."
-    order.order_status_code_id = 3
-    order.new_notes = message
-    order.cleanup_failed(message)
-    # Send failed message
-    begin
-      order.deliver_failed 
-    rescue => e
-      logger.error("FAILED TO SEND THE CONFIRM EMAIL: #{e}")
-    end
-    order.save
-  end
 end
