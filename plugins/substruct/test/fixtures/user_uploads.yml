@@ -6,7 +6,7 @@ lightsaber_blue_upload:
   type: Image
   height: 400
   filename: lightsaber_blue.jpg
-  attachment_file: vendor/plugins/substruct/test/fixtures/files/lightsaber_blue.jpg
+  attachment_file: test/fixtures/files/lightsaber_blue.jpg
   parent_id: 
   width: 400
 
@@ -18,7 +18,7 @@ lightsaber_green_upload:
   type: Image
   height: 400
   filename: lightsaber_green.jpg
-  attachment_file: vendor/plugins/substruct/test/fixtures/files/lightsaber_green.jpg
+  attachment_file: test/fixtures/files/lightsaber_green.jpg
   parent_id: 
   width: 400
 
@@ -30,7 +30,7 @@ lightsaber_red_upload:
   type: Image
   height: 400
   filename: lightsaber_red.jpg
-  attachment_file: vendor/plugins/substruct/test/fixtures/files/lightsaber_red.jpg
+  attachment_file: test/fixtures/files/lightsaber_red.jpg
   parent_id: 
   width: 400
 
@@ -42,6 +42,6 @@ towel_upload:
   type: Download
   height: 400
   filename: towel.jpg
-  attachment_file: vendor/plugins/substruct/test/fixtures/files/towel.jpg
+  attachment_file: test/fixtures/files/towel.jpg
   parent_id: 
   width: 400

@@ -12,6 +12,38 @@ class OrderTest < ActiveSupport::TestCase
     @santa_order = orders(:santa_next_christmas_order)
   end
   
+  def setup_new_order
+    @o = Order.new(
+      :tax => 0.0,
+      :product_cost => 1.25,
+      :created_on => 1.day.ago,
+      :shipping_address => order_addresses(:uncle_scrooge_address),
+      :order_user => order_users(:uncle_scrooge),
+      :billing_address => order_addresses(:uncle_scrooge_address),
+      :order_shipping_type => order_shipping_types(:ups_xp_critical),
+      :promotion_id => 0,
+      :shipping_cost => 30.0,
+      :order_number => Order.generate_order_number,
+      :order_account => order_accounts(:uncle_scrooge_account),
+      :order_status_code => order_status_codes(:ordered_paid_to_ship)
+    )
+    @li = OrderLineItem.for_product(items(:small_stuff))
+    @li_2 = OrderLineItem.for_product(items(:grey_coat))
+    
+    # Save the total value before set any promotion.
+    @totals = {
+      :order => @o.total,
+      :line_items => @o.line_items_total
+    }
+  end
+  
+  def setup_new_order_with_items
+    setup_new_order()
+    @o.order_line_items << @li
+    @o.order_line_items << @li_2
+    assert @o.save    
+  end
+  
   def test_associations
     assert_working_associations
     assert_not_nil @santa_order.customer
@@ -26,29 +58,9 @@ class OrderTest < ActiveSupport::TestCase
 
   # Test if a valid order can be created with success.
   def test_create_order
-    an_order_line_item = OrderLineItem.for_product(items(:small_stuff))
-
-    an_order = Order.new
-    
-    an_order.order_line_items << an_order_line_item
-    an_order.tax = 0.0
-    an_order.product_cost = 1.25
-    an_order.created_on = 1.day.ago
-    an_order.shipping_address = order_addresses(:uncle_scrooge_address)
-    an_order.order_user = order_users(:uncle_scrooge)
-    an_order.billing_address = order_addresses(:uncle_scrooge_address)
-    an_order.shipped_on = "" 
-    an_order.order_shipping_type = order_shipping_types(:ups_xp_critical)
-    an_order.promotion_id = 0
-    an_order.notes = '<p>Order completed.<br/><span class="info">[04-04-08 05:18 PM]</span></p>'
-    an_order.referer = "" 
-    an_order.shipping_cost = 30.0
-    an_order.order_number = Order.generate_order_number
-    an_order.order_account = order_accounts(:uncle_scrooge_account)
-    an_order.auth_transaction_id = "" 
-    an_order.order_status_code = order_status_codes(:ordered_paid_to_ship)
-
-    assert an_order.save
+    setup_new_order()
+    @o.order_line_items << OrderLineItem.for_product(items(:small_stuff))
+    assert @o.save
   end
 
 
@@ -107,39 +119,18 @@ class OrderTest < ActiveSupport::TestCase
 
   # Test if the product cost is being set before save.
   def test_set_product_cost
-    an_order_line_item = OrderLineItem.for_product(items(:small_stuff))
-
-    an_order = Order.new
-    
-    an_order.order_line_items << an_order_line_item
-    an_order.tax = 0.0
-    an_order.created_on = 1.day.ago
-    an_order.shipping_address = order_addresses(:uncle_scrooge_address)
-    an_order.order_user = order_users(:uncle_scrooge)
-    an_order.billing_address = order_addresses(:uncle_scrooge_address)
-    an_order.shipped_on = "" 
-    an_order.order_shipping_type = order_shipping_types(:ups_xp_critical)
-    an_order.promotion_id = 0
-    an_order.notes = '<p>Order completed.<br/><span class="info">[04-04-08 05:18 PM]</span></p>'
-    an_order.referer = "" 
-    an_order.shipping_cost = 30.0
-    an_order.order_number = Order.generate_order_number
-    an_order.order_account = order_accounts(:uncle_scrooge_account)
-    an_order.auth_transaction_id = "" 
-    an_order.order_status_code = order_status_codes(:ordered_paid_to_ship)
-
-    assert an_order.save
-    an_order.reload
-    
-    assert_equal an_order.product_cost, an_order_line_item.total
+    # Setup
+    setup_new_order()
+    oli = OrderLineItem.for_product(items(:small_stuff))
+    @o.order_line_items << oli
+    # Exercise
+    assert @o.save
+    # Verify
+    assert_equal @o.reload.product_cost, oli.total
   end
 
 
-  # Test if a promotion will be processed.
-  # OK # FIXME: promo.minimum_cart_value is being compared with the order total value.
-  # OK # FIXME: promo.minimum_cart_value is being compared before get rid of the old promotion.
-  # OK # FIXME: oli.unit_price uses order total value when using a percent promotion.
-  # OK # FIXME: The previous promotion line item isn't being properly deleted.
+
   # TODO: The method doesn't do only what its name says.
   # TODO: Why log every time a new OrderLineItem is created?
   # TODO: oli.item_id = promo.item_id is an ugly hack, setting an order item to empty in some situations.
@@ -147,170 +138,87 @@ class OrderTest < ActiveSupport::TestCase
   # if a shipping service was already choosed it will be different, executing the checkout, choosing a
   # shipping service, coming back adding another product and doing checkout again it will be different
   # etc.
-  def test_set_promo_code
-    a_coat_line_item = OrderLineItem.for_product(items(:grey_coat))
-    a_stuff_line_item = OrderLineItem.for_product(items(:small_stuff))
-
-    # Create an order.
-    an_order = Order.new
+  def test_set_promo_code_fixed_rebate
+    # Setup
+    setup_new_order()
+    promo = promotions(:fixed_rebate)
+    @o.promotion_code = promo.code
+    # Exercise
+    assert @o.save
+    # Verify
+    assert_equal @o.total, @totals[:order] - promo.discount_amount, "Fixed rebate verification error."
+  end
     
-    an_order.order_line_items << a_coat_line_item
-    an_order.order_line_items << a_stuff_line_item
-    an_order.tax = 0.0
-    an_order.created_on = 1.day.ago
-    an_order.shipping_address = order_addresses(:uncle_scrooge_address)
-    an_order.order_user = order_users(:uncle_scrooge)
-    an_order.billing_address = order_addresses(:uncle_scrooge_address)
-    an_order.shipped_on = "" 
-    an_order.order_shipping_type = order_shipping_types(:ups_xp_critical)
-    an_order.promotion_id = 0
-    an_order.notes = '<p>Order completed.<br/><span class="info">[04-04-08 05:18 PM]</span></p>'
-    an_order.referer = "" 
-    an_order.shipping_cost = 30.0
-    an_order.order_number = Order.generate_order_number
-    an_order.order_account = order_accounts(:uncle_scrooge_account)
-    an_order.auth_transaction_id = "" 
-    an_order.order_status_code = order_status_codes(:ordered_paid_to_ship)
+  def test_set_promo_code_percent_rebate
+    # Setup
+    setup_new_order()
+    promo = promotions(:percent_rebate)
+    @o.promotion_code = promo.code
+    # Exercise
+    assert @o.save
+    # Verify
+    assert_equal @o.total, @totals[:order] - (@totals[:line_items] * (promo.discount_amount/100)), "Percent rebate verification error."
+  end
 
-    assert an_order.save
-    
-    # Save the total value before set any promotion.
-    initial_order_total = an_order.total
-    initial_line_items_total = an_order.line_items_total
-    
-    # Test a fixed rebate.
-    a_fixed_rebate = promotions(:fixed_rebate)
-    an_order.promotion_code = a_fixed_rebate.code
-    # Saving it, sets the promo code and product cost.
-    assert an_order.save
-    assert_equal an_order.total, initial_order_total - a_fixed_rebate.discount_amount, "Fixed rebate verification error."
-    
-
-    # Test a percent rebate.
-    a_percent_rebate = promotions(:percent_rebate)
-    an_order.promotion_code = a_percent_rebate.code
-    # Saving it, sets the promo code and product cost.
-    assert an_order.save
-    assert_equal an_order.total, initial_order_total - (initial_line_items_total * (a_percent_rebate.discount_amount/100)), "Percent rebate verification error."
-
-
-    # Test a fixed rebate with a minimum cart value, after any previous promotion.
-    a_minimum_rebate = promotions(:minimum_rebate)
-    an_order.promotion_code = a_minimum_rebate.code
-    # Saving it, sets the promo code and product cost.
-    assert an_order.save
-    assert_equal an_order.total, initial_order_total - a_fixed_rebate.discount_amount, "Fixed rebate with minimum cart value verification error."
-
-    
+  # Test a fixed rebate with a minimum cart value
+  def test_set_promo_code_fixed_min_value
+    # Setup
+    setup_new_order()
+    promo = promotions(:minimum_rebate)
+    @li.quantity = 1000
+    @o.order_line_items << @li
+    assert @o.save
+    @totals[:order] = @o.total
+    assert @totals[:order] >= promo.minimum_cart_value
+    @o.promotion_code = promo.code
+    # Exercise
+    assert @o.save
+    # Verify
+    assert_equal @o.total, @totals[:order] - promo.discount_amount, "Fixed rebate with minimum cart value verification error."
+  end
+  
+  def test_set_promo_code_buy_one_get_one_free
+    # Setup
+    setup_new_order()
+    promo = promotions(:eat_more_stuff)
+    @o.order_line_items << @li
+    assert @o.save    
     # Save the quantity before set the promotion.
-    initial_line_item_quantity = an_order.order_line_items.find_by_name(a_stuff_line_item.name).quantity
-
-    # Test a get 1 more free promotion.
-    a_1_more_free_promotion = promotions(:eat_more_stuff)
-    an_order.promotion_code = a_1_more_free_promotion.code
-    # Saving it, sets the promo code and product cost.
-    an_order.save
-    assert_equal an_order.order_line_items.find_by_name(a_stuff_line_item.name).quantity, initial_line_item_quantity
-    assert_equal an_order.order_line_items.find_by_name(a_1_more_free_promotion.description).quantity, a_1_more_free_promotion.discount_amount
+    initial_line_item_quantity = @o.order_line_items.find_by_name(@li.name).quantity
+    @o.promotion_code = promo.code
+    
+    # Exercise
+    assert @o.save
+    
+    # Verify
+    assert_equal @o.order_line_items.find_by_name(@li.name).quantity, initial_line_item_quantity
+    assert_equal @o.order_line_items.find_by_name(promo.description).quantity, promo.discount_amount
     # order_line_items.name return the item name but order_line_items.find_by_name finds using the line item real name (the promotion description).
-    assert_not_equal an_order.order_line_items.find_by_name(a_stuff_line_item.name), an_order.order_line_items.find_by_name(a_1_more_free_promotion.description)
+    assert_not_equal @o.order_line_items.find_by_name(@li.name), @o.order_line_items.find_by_name(promo.description)
   end
 
 
   # Test if it will properly delete a previous promotion before apply a new one.
   def test_delete_previous_promotion_line_item
-    a_coat_line_item = OrderLineItem.for_product(items(:grey_coat))
-    a_stuff_line_item = OrderLineItem.for_product(items(:small_stuff))
-
-    # Create an order.
-    an_order = Order.new
+    setup_new_order_with_items()
     
-    an_order.order_line_items << a_coat_line_item
-    an_order.order_line_items << a_stuff_line_item
-    an_order.tax = 0.0
-    an_order.created_on = 1.day.ago
-    an_order.shipping_address = order_addresses(:uncle_scrooge_address)
-    an_order.order_user = order_users(:uncle_scrooge)
-    an_order.billing_address = order_addresses(:uncle_scrooge_address)
-    an_order.shipped_on = "" 
-    an_order.order_shipping_type = order_shipping_types(:ups_xp_critical)
-    an_order.promotion_id = 0
-    an_order.notes = '<p>Order completed.<br/><span class="info">[04-04-08 05:18 PM]</span></p>'
-    an_order.referer = "" 
-    an_order.shipping_cost = 30.0
-    an_order.order_number = Order.generate_order_number
-    an_order.order_account = order_accounts(:uncle_scrooge_account)
-    an_order.auth_transaction_id = "" 
-    an_order.order_status_code = order_status_codes(:ordered_paid_to_ship)
-
-    assert an_order.save
-
-    
-    # Test a fixed rebate.
     a_fixed_rebate = promotions(:fixed_rebate)
-    an_order.promotion_code = a_fixed_rebate.code
+    @o.promotion_code = a_fixed_rebate.code
     # Saving it, sets the promo code and product cost.
-    assert an_order.save
+    assert @o.save
     # Assert the promotion is there.
-    assert_equal an_order.order_line_items.find_by_name(a_fixed_rebate.description).name, a_fixed_rebate.description, "The fixed rebate wasn't added properly."
+    assert_equal @o.order_line_items.find_by_name(a_fixed_rebate.description).name, a_fixed_rebate.description, "The fixed rebate wasn't added properly."
 
     # Test a percent rebate.
     a_percent_rebate = promotions(:percent_rebate)
-    an_order.promotion_code = a_percent_rebate.code
+    @o.promotion_code = a_percent_rebate.code
     # Saving it, sets the promo code and product cost.
-    assert an_order.save
+    assert @o.save
     # Assert the promotion is there.
-    assert_equal an_order.order_line_items.find_by_name(a_percent_rebate.description).name, a_percent_rebate.description, "The percent rebate wasn't added properly."
+    assert_equal @o.order_line_items.find_by_name(a_percent_rebate.description).name, a_percent_rebate.description, "The percent rebate wasn't added properly."
 
     # Assert the previous promotion is NOT there.
-    assert_equal an_order.order_line_items.find_by_name(a_fixed_rebate.description), nil, "The fixed rebate is still there."
-
-    # Test a get 1 more free promotion.
-    a_1_more_free_promotion = promotions(:eat_more_stuff)
-    an_order.promotion_code = a_1_more_free_promotion.code
-    # Saving it, sets the promo code and product cost.
-    assert an_order.save
-    # Assert the promotion is there.
-    assert an_order.order_line_items.find_by_name(a_1_more_free_promotion.description), "The 1 more free promotion wasn't added properly."
-
-    # Assert the previous promotion is NOT there.
-    assert_equal an_order.order_line_items.find_by_name(a_percent_rebate.description), nil, "The percent rebate is still there."
-
-    # Test a fixed rebate again.
-    a_fixed_rebate = promotions(:fixed_rebate)
-    an_order.promotion_code = a_fixed_rebate.code
-    # Saving it, sets the promo code and product cost.
-    assert an_order.save
-    # Assert the promotion is there.
-    assert an_order.order_line_items.find_by_name(a_fixed_rebate.description), "The fixed rebate wasn't added properly."
-
-    # Assert the previous promotion is NOT there.
-    assert_equal an_order.order_line_items.find_by_name(a_1_more_free_promotion.description), nil, "The 1 more free promotion is still there."
-
-    # Test a get 1 more free promotion again but this time without the correspondent item.
-    an_order.order_line_items.delete(a_stuff_line_item)
-    assert an_order.save
-    
-    a_1_more_free_promotion = promotions(:eat_more_stuff)
-    an_order.promotion_code = a_1_more_free_promotion.code
-    # Saving it, sets the promo code and product cost.
-    assert an_order.save
-    # Assert the promotion is there.
-    assert_equal an_order.order_line_items.find_by_name(a_1_more_free_promotion.description), nil, "The 1 more free promotion should NOT be added here."
-
-    # Assert the previous promotion is NOT there.
-    assert_equal an_order.order_line_items.find_by_name(a_fixed_rebate.description), nil, "The fixed rebate is still there."
-
-    # Test a percent rebate, again.
-    a_percent_rebate = promotions(:percent_rebate)
-    an_order.promotion_code = a_percent_rebate.code
-    # Saving it, sets the promo code and product cost.
-    assert an_order.save
-    # Assert the promotion is there.
-    assert_equal an_order.order_line_items.find_by_name(a_percent_rebate.description).name, a_percent_rebate.description, "The percent rebate wasn't added properly."
-
-    # Assert the correct line items length in the end.
-    assert_equal an_order.order_line_items.length, 2, "There's something wrong with the line items length."
+    assert_equal @o.order_line_items.find_by_name(a_fixed_rebate.description), nil, "The fixed rebate is still there."
   end
 
   

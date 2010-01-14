@@ -22,7 +22,7 @@ class StoreControllerTest < ActionController::TestCase
 
 
   # Test the index action.
-  def test_should_show_index
+  def test_index
     get :index
     assert_response :success
     assert_template 'index'
@@ -33,7 +33,7 @@ class StoreControllerTest < ActionController::TestCase
 
 
   # We should get a list of products using a search term.
-  def test_should_search
+  def test_search_multiple_results
     a_term = "an"
     get :search, :search_term => a_term
     assert_response :success
@@ -42,12 +42,13 @@ class StoreControllerTest < ActionController::TestCase
     assert assigns(:products)
     assert_equal 2, assigns(:products).size
     assert_template 'index'
+  end
 
 
+  def test_search_one_result
     # Now with a term, that returns only one result.
     a_term = "lightsaber"
     get :search, :search_term => a_term
-    assert_response :redirect
     assert_redirected_to :action => :show
     assert assigns(:products)
     assert_equal 1, assigns(:products).size
@@ -57,21 +58,23 @@ class StoreControllerTest < ActionController::TestCase
   end
 
 
-  # We should get a list of products that belongs to a tag.
-  def test_should_show_by_tags
-    # Call it first without a tag.
+  def test_show_by_tags_no_tag
     get :show_by_tags, :tags => []
     assert_response :missing
+  end
 
-    # Now call it again with a tag.
+  # Now call it again with a tag.  
+  def test_show_by_tags_with_tag
     a_tag = tags(:weapons)
     get :show_by_tags, :tags => [a_tag.name]
     assert_response :success
     assert_equal "Store #{assigns(:viewing_tags).collect { |t| ' > ' + t.name}}", assigns(:title)
     assert assigns(:products)
     assert_template 'index'
+  end
 
-    # Now call it again with a tag and a subtag.
+  # Now call it again with a tag and a subtag.
+  def test_show_by_tags_with_subtag
     a_tag = tags(:weapons)
     a_subtag = tags(:mass_destruction)
     get :show_by_tags, :tags => [a_tag.name, a_subtag.name]
@@ -79,15 +82,20 @@ class StoreControllerTest < ActionController::TestCase
     assert_equal "Store #{assigns(:viewing_tags).collect { |t| ' > ' + t.name}}", assigns(:title)
     assert assigns(:products)
     assert_template 'index'
-    
-    # Call it again with an invalid tag.
+  end
+
+  # Call it again with an invalid tag.    
+  def test_show_by_tags_invalid
     get :show_by_tags, :tags => ["invalid"]
     assert_response :missing
+  end
 
-    # Call it again with an invalid child tag.
+  # Call it again with an invalid child tag.
+  def test_show_by_tags_invalid_subtag
+    a_tag = tags(:weapons)
     get :show_by_tags, :tags => [a_tag.name, "invalid"]
     assert_response :missing
- end
+  end
 
 
   # Test the display_product.
@@ -104,7 +112,7 @@ class StoreControllerTest < ActionController::TestCase
   
   
   # Test the show action.
-  def test_should_show_show
+  def test_show
     a_product = items(:lightsaber)
     
     # TODO: A code is being passed to a hash parameter called id.
@@ -114,65 +122,65 @@ class StoreControllerTest < ActionController::TestCase
     assert_not_nil assigns(:product)
     assert_equal a_product.name, assigns(:title)
     assert_equal 3, assigns(:variations).size
+  end
 
-
-    # Now with an invalid code.
+  def test_show_invalid_product
     get :show, :id => "invalid"
-    assert_response :redirect
     assert_redirected_to :action => :index
     follow_redirect
     assert_select "p", :text => /Sorry, we couldn/
   end
   
+  def setup_inventory_control
+    @product = items(:uranium_portion)
+    assert @product.update_attribute('quantity', 0)
+    assert_equal 0, @product.reload.quantity
+  end
+  
   # If inventory control is disabled, you should be able to purchase a product if quantity
   # is set to any amount.
-  def test_show_product_inventory_control    
-    product = items(:uranium_portion)
-    assert product.update_attribute('quantity', 0)
-    assert_equal 0, product.reload.quantity
-    
-    # Inventory control enabled
+  def test_inventory_control_enabled
+    setup_inventory_control()
     assert Preference.find_by_name('store_use_inventory_control').update_attribute('value', 1)
-    get :show, :id => product.code
+    get :show, :id => @product.code
     assert_response :success
     assert_select "h3#out_of_stock"
+  end
     
-    # Inventory control DISABLED
+  def test_inventory_control_disabled
+    setup_inventory_control()
     assert Preference.find_by_name('store_use_inventory_control').update_attribute('value', 0)
-    get :show, :id => product.code
+    get :show, :id => @product.code
     assert_response :success
     assert_select "h3#out_of_stock", false
     assert_select "form#add_to_cart_form"
   end
   
   # Test the show cart action. This is the action that shows the modal cart.
-  def test_should_show_cart
+  def test_show_cart
     get :show_cart
-    
-    # Here we get as a response an entire html page to render inside a modal layout.
-    # puts @response.body
+    assert_response :success
   end
 
 
   # Test the add to cart action.
-  def test_should_add_to_cart
-    # TODO: This action don't work passing variations. 
-    # TODO: If this action is not used anymore, get rid of it. 
-
-    # Try adding a product.
+  # TODO: This action don't work passing variations. 
+  # TODO: If this action is not used anymore, get rid of it. 
+  def test_add_to_cart_success
     a_product = items(:holy_grenade)
     post :add_to_cart, :id => a_product.id
-    assert_response :redirect
     assert_redirected_to :action => :checkout
-    a_cart = assigns(:order)
-    assert_equal 1, a_cart.items.length
-
-    # Try adding an invalid product.
-    a_cart.empty!
-    # Make sure this id don't exist.
+    cart = assigns(:order)
+    assert_equal 1, cart.items.length
+  end
+  
+  def test_add_to_cart_fail
+    # Setup
+    a_product = items(:holy_grenade)
     a_product.destroy
+    # Exercise
     post :add_to_cart, :id => a_product.id
-    assert_response :redirect
+    # Verify
     assert_redirected_to :action => :index
     follow_redirect
     assert_select "p", :text => /Sorry, you tried to buy a product that we don/
@@ -186,30 +194,30 @@ class StoreControllerTest < ActionController::TestCase
     a_product = items(:towel)
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
-    a_cart = assigns(:order)
-    assert_equal 1, a_cart.items.length
+    cart = assigns(:order)
+    assert_equal 1, cart.items.length
 
     # Try adding a variation.
     a_variation = items(:red_lightsaber)
     xhr(:post, :add_to_cart_ajax, :variation => a_variation.id, :quantity => "2")
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
-    a_cart = assigns(:order)
-    assert_equal 2, a_cart.items.length
+    cart = assigns(:order)
+    assert_equal 2, cart.items.length
 
     # Try adding another product (that should not be available).
     a_product = items(:holy_grenade)
     xhr(:post, :add_to_cart_ajax, :id => a_product.id, :quantity => "2")
     assert_response 400
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
-    a_cart = assigns(:order)
+    cart = assigns(:order)
     # It should not have added anything.
-    assert_equal 2, a_cart.items.length
+    assert_equal 2, cart.items.length
     
     # Try adding a product with a non-numerical quantity
     a_product = items(:towel)
     xhr(:post, :add_to_cart_ajax, :id => a_product.id, :quantity => "a")
-    a_cart = assigns(:order)
-    assert_equal 2, a_cart.items.length
+    cart = assigns(:order)
+    assert_equal 2, cart.items.length
   end
   
   def test_add_to_cart_inventory_control
@@ -237,14 +245,14 @@ class StoreControllerTest < ActionController::TestCase
     a_product = items(:towel)
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
-    a_cart = assigns(:order)
-    assert_equal 1, a_cart.items.length
+    cart = assigns(:order)
+    assert_equal 1, cart.items.length
 
     # Try removing a product.
     xhr(:post, :remove_from_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a window.location.reload() javascript function is executed.
-    a_cart = assigns(:order)
-    assert_equal 0, a_cart.items.length
+    cart = assigns(:order)
+    assert_equal 0, cart.items.length
     
     # Try removing an invalid product.
     # Make sure this id don't exist.
@@ -260,8 +268,8 @@ class StoreControllerTest < ActionController::TestCase
     a_product = items(:towel)
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
-    a_cart = assigns(:order)
-    assert_equal 1, a_cart.items.length
+    cart = assigns(:order)
+    assert_equal 1, cart.items.length
 
     xhr(:post, :empty_cart_ajax)
     # Here nothing is rendered directly, but a window.location.reload() javascript function is executed.
@@ -277,11 +285,10 @@ class StoreControllerTest < ActionController::TestCase
     a_product = items(:towel)
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
-    a_cart = assigns(:order)
-    assert_equal 1, a_cart.items.length
+    cart = assigns(:order)
+    assert_equal 1, cart.items.length
 
     post :empty_cart
-    assert_response :redirect
     assert_redirected_to :action => :index
 
     assert_equal 0, assigns(:order).items.length
@@ -291,12 +298,11 @@ class StoreControllerTest < ActionController::TestCase
 
   # Test the empty cart action.
   def test_should_empty_cart_after_checkout
-    test_should_checkout
+    test_checkout_success()
     
     an_order_id = session[:order_id]
     
     post :empty_cart
-    assert_response :redirect
     assert_redirected_to :action => :index
 
     assert_equal 0, assigns(:order).items.length
@@ -313,8 +319,8 @@ class StoreControllerTest < ActionController::TestCase
     a_product = items(:towel)
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
-    a_cart = assigns(:order)
-    assert_equal 1, a_cart.items.length
+    cart = assigns(:order)
+    assert_equal 1, cart.items.length
 
     post(
       :checkout,
@@ -347,26 +353,24 @@ class StoreControllerTest < ActionController::TestCase
   
   
   # Test the checkout action.
-  def test_should_checkout
-    # Add a product to the cart.
-    a_product = items(:towel)
-    xhr(:post, :add_to_cart_ajax, :id => a_product.id)
-    # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
-    a_cart = assigns(:order)
-    assert_equal 1, a_cart.items.length
-
+  def test_get_checkout
+    test_add_to_cart_success()
+    
     get :checkout
     assert_response :success
     assert_template 'checkout'
     assert_layout 'checkout'
     assert_equal "Please enter your information to continue this purchase.", assigns(:title)
     assert_not_nil assigns(:cc_processor)
+  end
     
-    # Post to it an order.
+  def test_checkout_fail
+    test_add_to_cart_success()
+    
     post(
       :checkout,
       :order_account => {
-        :cc_number => "4007000000027",
+        :cc_number => "",
         :expiration_year => 4.years.from_now.year,
         :expiration_month => "1"
       },
@@ -385,15 +389,13 @@ class StoreControllerTest < ActionController::TestCase
         :email_address => "uncle.scrooge@whoknowswhere.com"
       }
     )
-    assert_response :redirect
-    assert_redirected_to :action => :select_shipping_method
-
-    get :checkout
+    assert flash[:notice].include?("There were some problems")
     assert_response :success
-    assert_layout 'checkout'
-    assert_template 'checkout'
-    assert_equal "Please enter your information to continue this purchase.", assigns(:title)
-    assert_not_nil assigns(:cc_processor)
+  end
+
+  
+  def test_checkout_success
+    test_add_to_cart_success()
     
     # Post it again with the order already saved.
     post :checkout,
@@ -402,20 +404,13 @@ class StoreControllerTest < ActionController::TestCase
       :expiration_year => 4.years.from_now.year,
       :expiration_month => "1"
     },
-    :shipping_address => {
-      :city => "",
-      :zip => "",
-      :country_id => countries(:US).id,
-      :first_name => "",
-      :telephone => "",
-      :last_name => "",
-      :address => "",
-      :state => ""
-    },
+    :shipping_address => @scrooge_address.attributes,
     :billing_address => @scrooge_address.attributes,
     :order_user => {
       :email_address => "uncle.scrooge@whoknowswhere.com"
     }
+    assert flash[:notice].blank?
+    assert_redirected_to :action => 'select_shipping_method'
   end
   
   
@@ -428,8 +423,8 @@ class StoreControllerTest < ActionController::TestCase
     a_product = items(:towel)
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
-    a_cart = assigns(:order)
-    assert_equal 1, a_cart.items.length
+    cart = assigns(:order)
+    assert_equal 1, cart.items.length
 
     get :checkout
     assert_response :success
@@ -454,7 +449,6 @@ class StoreControllerTest < ActionController::TestCase
       :email_address => "uncle.scrooge@whoknowswhere.com"
     }
     
-    assert_response :redirect
     assert_redirected_to :action => :select_shipping_method
   end
   
@@ -467,8 +461,8 @@ class StoreControllerTest < ActionController::TestCase
     a_product = items(:towel)
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
-    a_cart = assigns(:order)
-    assert_equal 1, a_cart.items.length
+    cart = assigns(:order)
+    assert_equal 1, cart.items.length
 
     get :checkout
     assert_response :success
@@ -490,7 +484,6 @@ class StoreControllerTest < ActionController::TestCase
     },
     :use_separate_shipping_address => "true"
     
-    assert_response :redirect
     assert_redirected_to :action => :select_shipping_method
 
 
@@ -522,8 +515,8 @@ class StoreControllerTest < ActionController::TestCase
     a_product = items(:towel)
     xhr(:post, :add_to_cart_ajax, :id => a_product.id)
     # Here nothing is rendered directly, but a showPopWin() javascript function is executed.
-    a_cart = assigns(:order)
-    assert_equal 1, a_cart.items.length
+    cart = assigns(:order)
+    assert_equal 1, cart.items.length
 
     get :checkout
     assert_response :success
@@ -577,7 +570,6 @@ class StoreControllerTest < ActionController::TestCase
     
     # Try to checkout
     get :checkout
-    assert_response :redirect
     assert_redirected_to :action => :index
     follow_redirect
     assert_select "div#flash" do
@@ -626,7 +618,6 @@ class StoreControllerTest < ActionController::TestCase
       :email_address => "uncle.scrooge@whoknowswhere.com"
     }
     
-    assert_response :redirect
     assert_redirected_to :action => :index
     follow_redirect
     assert_select "div#flash" do
@@ -636,8 +627,7 @@ class StoreControllerTest < ActionController::TestCase
   
   # Test the select shipping method action.
   def test_should_select_shipping_method
-    # Execute an earlier test as this one deppends on it to have an order in the session.
-    test_should_checkout
+    test_checkout_success()
 
     get :select_shipping_method
     assert_response :success
@@ -650,7 +640,6 @@ class StoreControllerTest < ActionController::TestCase
   # Test the select shipping method action.
   def test_should_select_shipping_method_without_an_order
     get :select_shipping_method
-    assert_response :redirect
     assert_redirected_to :action => :index
   end  
   
@@ -671,7 +660,6 @@ class StoreControllerTest < ActionController::TestCase
     # Post to it when the show confirmation preference is true.
     assert Preference.save_settings({ "store_show_confirmation" => "1" })
     post :set_shipping_method, :ship_type_id => order_shipping_types(:ups_ground).id
-    assert_response :redirect
     assert_redirected_to :action => :confirm_order
     follow_redirect
     assert_template 'confirm_order'
@@ -687,22 +675,20 @@ class StoreControllerTest < ActionController::TestCase
     # Post to it when the show confirmation preference is false.
     assert Preference.save_settings({ "store_show_confirmation" => "0" })
     post :set_shipping_method, :ship_type_id => order_shipping_types(:ups_ground).id
-    assert_response :redirect
     assert_redirected_to :action => :finish_order
   end
 
   # Test the confirm order action.
   def test_should_confirm_order
     # Execute an earlier test as this one deppends on it.
-#    test_should_select_shipping_method
+    #    test_should_select_shipping_method
 
     # TODO: The code have an unreachable part, the order_shipping_type_id will never be nil because
     # the database schema don't let it.
- #   assert_equal assigns(:order).order_shipping_type_id, nil
+    #   assert_equal assigns(:order).order_shipping_type_id, nil
     
     # Get the confirm order action when the shipping is nil.
  #   get :confirm_order
- #   assert_response :redirect
  #   assert_redirected_to :action => :select_shipping_method
   end
 
@@ -732,10 +718,6 @@ class StoreControllerTest < ActionController::TestCase
     
     # Ensure customer has been logged in, so they may download their files
     assert_not_nil session[:customer], "Customer was not logged in after successful purchase."
-    
-    # Ensure download available to customer
-    assert_select "h2", :text => /Product Downloads/
-    assert_select "a", :text => items(:towel).name
   end
 
 
@@ -754,7 +736,6 @@ class StoreControllerTest < ActionController::TestCase
 
     # Post to the finish order action.
     post :finish_order
-    assert_response :redirect
     assert_redirected_to :action => :checkout
     follow_redirect
     assert_select "p", :text => /Sorry, but your transaction didn/
@@ -830,7 +811,6 @@ class StoreControllerTest < ActionController::TestCase
 
     # Post to the finish order action.
     post :finish_order
-    assert_response :redirect
     assert_redirected_to :action => :checkout
     follow_redirect
     assert_select "p", :text => /Something went wrong and your transaction failed/

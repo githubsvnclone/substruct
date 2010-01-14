@@ -46,12 +46,9 @@ class OrderAddressTest < ActiveSupport::TestCase
   
   def test_invalid_zip
     an_address = order_addresses(:santa_address)
-    # should fail--starts with invalid zip
-    assert !an_address.valid?
     an_address.zip = '90210'
     assert an_address.valid?
     
-    # another invalid zip
     an_address.zip = '90a10'
     assert !an_address.valid?
     

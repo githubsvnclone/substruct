@@ -124,15 +124,15 @@ class CustomersControllerTest < ActionController::TestCase
   end
 
 
-  # Test the new action. Here we test if a new invalid cutomer will NOT be saved.
-  def test_should_not_save_new_customer
-    # Call the new form.
+  def test_get_new
     get :new
     assert_response :success
     assert_equal assigns(:title), "New Account"
     assert_template 'new'
-    
-    # Post to it a new invalid customer.
+  end
+
+  # Post to it a new invalid customer.    
+  def test_new_fail
     post :new,
     :customer => {
       :email_address => "customer",
@@ -146,12 +146,18 @@ class CustomersControllerTest < ActionController::TestCase
     # Here we assert that a flash message appeared and the proper fields was marked.
     assert_select "p", :text => /There was a problem creating your account./
     assert_select "div.fieldWithErrors input#customer_email_address"
+  end
 
   
+  def test_new_fail_existing_require_login
+    # Ensure we require a login for the store.
+    # This validates dupe email addresses.
+    assert Preference.save_setting('store_require_login' => true)
+    
     # Post to it an already existing customer.
     post :new,
     :customer => {
-      :email_address => "colonel.mustard@whoknowswhere.com",
+      :email_address => order_users(:mustard).email_address,
       :password => "password"
     }
     

@@ -42,7 +42,6 @@ class CustomersController < ApplicationController
   end
   
   # Creates a new customer
-  #
   def new
     @title = "New Account"
     # Update account details
@@ -126,7 +125,7 @@ class CustomersController < ApplicationController
       :conditions => ["order_number = ? AND order_user_id = ?", params[:id], @customer.id]
     )
     # 404 for non found...
-    render(:file => 'public/404.html', :status => 404) and return unless @order
+    render(:file => "#{RAILS_ROOT}/public/404.html", :status => 404) and return unless @order
     
     @order_time = @order.created_on.strftime("%m/%d/%y %I:%M %p")
     @title = "Order #{@order.order_number}"
@@ -218,7 +217,7 @@ class CustomersController < ApplicationController
       :conditions => ["order_number = ? AND order_user_id = ?", params[:order_number], @customer.id]
     )
     # 404 for non found...
-    render(:file => 'public/404.html', :status => 404) and return unless order
+    render(:file => "#{RAILS_ROOT}/public/404.html", :status => 404) and return unless order
     
     # Now find download...
     file = Download.find(:first, :conditions => ["id = ?", params[:download_id]])
@@ -227,7 +226,7 @@ class CustomersController < ApplicationController
     if file && order.downloads.include?(file)
       send_file(file.full_filename)
     else
-      render(:file => 'public/404.html', :status => 404) and return
+      render(:file => "#{RAILS_ROOT}/public/404.html", :status => 404) and return
     end
   end
 	
