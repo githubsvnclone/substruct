@@ -9,7 +9,7 @@ class OrderTest < ActiveSupport::TestCase
   )
   
   def setup
-    @santa_order = orders(:santa_next_christmas_order)
+    @order = orders(:santa_next_christmas_order)
   end
   
   def setup_new_order
@@ -46,7 +46,7 @@ class OrderTest < ActiveSupport::TestCase
   
   def test_associations
     assert_working_associations
-    assert_not_nil @santa_order.customer
+    assert_not_nil @order.customer
   end
 
   def test_can_save_cart_order
@@ -63,29 +63,10 @@ class OrderTest < ActiveSupport::TestCase
     assert @o.save
   end
 
-
   # Test if an order can be found with success.
   def test_find_order
-    an_order_id = orders(:santa_next_christmas_order).id
     assert_nothing_raised {
-      Order.find(an_order_id)
-    }
-  end
-
-
-  # Test if an order can be updated with success.
-  def test_update_order
-    an_order = orders(:santa_next_christmas_order)
-    assert an_order.update_attributes(:notes => '<p>Order completed.<br/><span class="info">[04-04-08 05:18 PM]</span><br/>New note.</p>')
-  end
-
-
-  # Test if an order can be destroyed with success.
-  def test_destroy_order
-    an_order = orders(:santa_next_christmas_order)
-    an_order.destroy
-    assert_raise(ActiveRecord::RecordNotFound) {
-      Order.find(an_order.id)
+      Order.find(@order.id)
     }
   end
   
@@ -251,47 +232,24 @@ class OrderTest < ActiveSupport::TestCase
   
   # Test if the sales totals for a given year will be generated.
   def test_get_sales_totals_for_year
-    sales_totals = Order.get_totals_for_year(Date.today.year)
-    an_order = orders(:santa_next_christmas_order)
-    a_month = an_order.created_on.month
-    sales_totals[a_month][0] = 1
-    sales_totals[a_month][1] = an_order.product_cost
-    sales_totals[a_month][2] = an_order.tax
-    sales_totals[a_month][3] = an_order.shipping_cost
+    sales_totals = Order.get_totals_for_year(2007)
+    assert_equal 1, sales_totals[1]['number_of_sales'].to_f
+    assert_equal @order.product_cost, sales_totals[1]['sales_total'].to_f
+    assert_equal @order.tax, sales_totals[1]['tax'].to_f
+    assert_equal @order.shipping_cost, sales_totals[1]['shipping'].to_f
   end
 
   
   # Test if a csv file with a list of orders will be generated.
   def test_get_csv_for_orders
-    # We don't have more than one order to test now.
-    an_order = orders(:santa_next_christmas_order)
+    order_1 = orders(:santa_next_christmas_order)
 
-    # Create a new order, with a blank shipping type, just to cover a comparison in the method.
-    another_order_line_item = OrderLineItem.for_product(items(:small_stuff))
-
-    another_order = Order.new
-    
-    another_order.order_line_items << another_order_line_item
-    another_order.tax = 0.0
-    another_order.product_cost = 1.25
-    another_order.created_on = 1.day.ago
-    another_order.shipping_address = order_addresses(:uncle_scrooge_address)
-    another_order.order_user = order_users(:uncle_scrooge)
-    another_order.billing_address = order_addresses(:uncle_scrooge_address)
-    another_order.shipped_on = "" 
-    another_order.promotion_id = 0
-    another_order.notes = '<p>Order completed.<br/><span class="info">[04-04-08 05:18 PM]</span></p>'
-    another_order.referer = "" 
-    another_order.shipping_cost = 30.0
-    another_order.order_number = Order.generate_order_number
-    another_order.order_account = order_accounts(:uncle_scrooge_account)
-    another_order.auth_transaction_id = "" 
-    another_order.order_status_code = order_status_codes(:cart)
-
-    assert another_order.save
+    # Order with a blank shipping type, just to cover a comparison in the method.
+    order_2 = orders(:an_order_ordered_paid_shipped)
+    order_2.order_shipping_type = nil
     
     # Test the CSV.
-    csv_string = Order.get_csv_for_orders([an_order, another_order])
+    csv_string = Order.get_csv_for_orders([order_1, order_2])
     csv_array = FasterCSV.parse(csv_string)
 
     # Test if the header is right.
@@ -311,7 +269,7 @@ class OrderTest < ActiveSupport::TestCase
    orders_list_arr = []
     
     # Test if an order is right.
-    for order in [an_order, another_order]
+    for order in [order_1, order_2]
       bill = order.billing_address
       ship = order.shipping_address
       pretty_date = order.created_on.strftime("%m/%d/%y")
@@ -349,121 +307,71 @@ class OrderTest < ActiveSupport::TestCase
   # Test if a xml file with a list of orders will be generated.
   # TODO: Get rid of the reference to fedex code. 
   def test_get_xml_for_orders
-    # We don't have more than one order to test now.
-    an_order = orders(:santa_next_christmas_order)
-    
-    # Create a new order, with a blank shipping type, just to cover a comparison in the method.
-    another_order_line_item = OrderLineItem.for_product(items(:small_stuff))
+    order_1 = orders(:santa_next_christmas_order)
 
-    another_order = Order.new
-    
-    another_order.order_line_items << another_order_line_item
-    another_order.tax = 0.0
-    another_order.product_cost = 1.25
-    another_order.created_on = 1.day.ago
-    another_order.shipping_address = order_addresses(:uncle_scrooge_address)
-    another_order.order_user = order_users(:uncle_scrooge)
-    another_order.billing_address = order_addresses(:uncle_scrooge_address)
-    another_order.shipped_on = "" 
-    another_order.promotion_id = 0
-    another_order.notes = '<p>Order completed.<br/><span class="info">[04-04-08 05:18 PM]</span></p>'
-    another_order.referer = "" 
-    another_order.shipping_cost = 30.0
-    another_order.order_number = Order.generate_order_number
-    another_order.order_account = order_accounts(:uncle_scrooge_account)
-    another_order.auth_transaction_id = "" 
-    another_order.order_status_code = order_status_codes(:cart)
-
-    assert another_order.save
+    # Order with a blank shipping type, just to cover a comparison in the method.
+    order_2 = orders(:an_order_ordered_paid_shipped)
+    order_2.order_shipping_type = nil
     
     # Test the XML.
     require 'rexml/document'
     
-    xml = REXML::Document.new(Order.get_xml_for_orders([an_order, another_order]))
+    xml = REXML::Document.new(Order.get_xml_for_orders([order_1, order_2]))
     assert xml.root.name, "orders"
 
     # TODO: For some elements the name don't correspond with the content.
     # This can be tested a little more.
   end
 
+  # INSTANCE METHODS ==========================================================
   
   # Test if the line item that represents a promotion is returned if present.
   # FIXME: This method doesn't find the promotion line item if the promotion has an associated item (get 1 free promotions).
-  def test_return_promotion_line_item
-    a_promotion = promotions(:percent_rebate)
-    an_order_line_item = OrderLineItem.for_product(items(:small_stuff))
- 
-    an_order = Order.new
-    
-    an_order.order_line_items << an_order_line_item
-    an_order.tax = 0.0
-    an_order.created_on = 1.day.ago
-    an_order.shipping_address = order_addresses(:uncle_scrooge_address)
-    an_order.order_user = order_users(:uncle_scrooge)
-    an_order.billing_address = order_addresses(:uncle_scrooge_address)
-    an_order.shipped_on = "" 
-    an_order.order_shipping_type = order_shipping_types(:ups_xp_critical)
-    an_order.notes = '<p>Order completed.<br/><span class="info">[04-04-08 05:18 PM]</span></p>'
-    an_order.referer = "" 
-    an_order.shipping_cost = 30.0
-    an_order.order_number = Order.generate_order_number
-    an_order.order_account = order_accounts(:uncle_scrooge_account)
-    an_order.auth_transaction_id = "" 
-    an_order.order_status_code = order_status_codes(:ordered_paid_to_ship)
-    
-    an_order.promotion_code = a_promotion.code
-    an_order.set_promo_code
-
-    assert an_order.save
-    
-    assert_equal an_order.promotion_line_item.name, a_promotion.description
+  def test_promotion_line_item
+    # Setup
+    promo = promotions(:percent_rebate)
+    setup_new_order()
+    # Exercise
+    @o.promotion_code = promo.code
+    assert @o.save
+    # Verify
+    assert_equal @o.promotion_line_item.name, promo.description
   end
-  
   
   # Test if the current status of an order will be shown with success.
-  def test_get_order_status
-    an_order = orders(:santa_next_christmas_order)
-    assert_equal an_order.status, order_status_codes(:ordered_paid_to_ship).name
+  def test_status
+    assert_equal @order.status, order_status_codes(:ordered_paid_to_ship).name
   end
-  
   
   # Test if we can refer to order_line_items simply using items.
-  def test_return_items
-    # TODO: Why not use an alias here?
-    an_order = orders(:santa_next_christmas_order)
-    assert_equal an_order.order_line_items, an_order.items
+  def test_item_association
+    assert_equal @order.order_line_items, @order.items
   end
-  
   
   # Test if we can get the total order value.
   def test_get_total_order_value
-    # TODO: Why log this?
-    an_order = orders(:santa_next_christmas_order)
-    assert_equal an_order.total, an_order.line_items_total + an_order.shipping_cost + an_order.tax_cost
+    expected_value = @order.line_items_total + @order.shipping_cost + @order.tax_cost
+    assert_equal expected_value, @order.total
   end
-  
   
   # Test if we can get the tax total cost for the order.
   def test_get_total_tax_cost
-    an_order = orders(:santa_next_christmas_order)
-    assert_equal an_order.tax_cost, (an_order.line_items_total) * (an_order.tax/100)
+    expected_value = (@order.line_items_total) * (@order.tax/100)
+    assert_equal expected_value, @order.tax_cost
   end
-  
   
   # Test if we can refer to the billing address name.
   def test_name
-    order = orders(:santa_next_christmas_order)
-    assert_equal order.name, "#{order.billing_address.first_name} #{order.billing_address.last_name}"
-    order.billing_address.destroy
-    order.reload
-    assert_equal '', order.name
+    expected_name = "#{@order.billing_address.first_name} #{@order.billing_address.last_name}"
+    assert_equal expected_name, @order.name
+    @order.billing_address.destroy
+    @order.reload
+    assert_equal '', @order.name
   end
   
   # Test if we can refer to order_account simply using account.
   def test_return_account
-    # TODO: Why not use an alias here?
-    an_order = orders(:santa_next_christmas_order)
-    assert_equal an_order.order_account, an_order.account
+    assert_equal @order.account, @order.order_account
   end
   
   
@@ -472,47 +380,25 @@ class OrderTest < ActiveSupport::TestCase
   # TODO: Get rid of this method if it will not be used.
   def test_build_line_items_from_hash
     # Create a new order and put just one line item.
-    an_order_line_item = OrderLineItem.for_product(items(:small_stuff))
-
-    an_order = Order.new
-    
-    an_order.order_line_items << an_order_line_item
-    an_order.tax = 0.0
-    an_order.created_on = 1.day.ago
-    an_order.shipping_address = order_addresses(:uncle_scrooge_address)
-    an_order.customer = order_users(:uncle_scrooge)
-    an_order.billing_address = order_addresses(:uncle_scrooge_address)
-    an_order.shipped_on = "" 
-    an_order.order_shipping_type = order_shipping_types(:ups_xp_critical)
-    an_order.promotion_id = 0
-    an_order.notes = '<p>Order completed.<br/><span class="info">[04-04-08 05:18 PM]</span></p>'
-    an_order.referer = "" 
-    an_order.shipping_cost = 30.0
-    an_order.order_number = Order.generate_order_number
-    an_order.order_account = order_accounts(:uncle_scrooge_account)
-    an_order.auth_transaction_id = "" 
-    an_order.order_status_code = order_status_codes(:ordered_paid_to_ship)
-
-    assert an_order.save
+    setup_new_order()
+    @o.order_line_items << @li
     
     # Now try to feed it with others.
-    an_order.line_items = {
+    @o.line_items = {
       items(:red_lightsaber).id => {'quantity' => 2},
       items(:towel).id => {'quantity' => 1},
       items(:blue_lightsaber).id => {'quantity' => ""}
     }
     
-    assert_equal an_order.order_line_items.size, 2
+    assert_equal @o.items.size, 2
   end
 
   
   # Test an order to see if it will correctly say if has a valid transaction id.
   def test_show_if_contains_valid_transaction_id
-    an_order = orders(:santa_next_christmas_order)
-    assert_equal an_order.contains_valid_transaction_id?, false
-    
-    assert an_order.update_attributes(:auth_transaction_id => 123)
-    assert_equal an_order.contains_valid_transaction_id?, true
+    assert_equal @order.contains_valid_transaction_id?, false
+    assert @order.update_attributes(:auth_transaction_id => 123)
+    assert_equal @order.contains_valid_transaction_id?, true
   end
   
   
@@ -520,8 +406,7 @@ class OrderTest < ActiveSupport::TestCase
   # TODO: The comment about how to use this method and how it should really be used are different.
   # TODO: Get rid of this method if it will not be used.
   def test_show_if_has_line_item
-    an_order = orders(:santa_next_christmas_order)
-    assert_equal an_order.has_line_item?(an_order.order_line_items.find_by_name(items(:towel).name).id), true
+    assert_equal @order.has_line_item?(@order.order_line_items.find_by_name(items(:towel).name).id), true
 
     # Create a new order and put just one line item.
     new_order_line_item = OrderLineItem.for_product(items(:small_stuff))
@@ -530,7 +415,7 @@ class OrderTest < ActiveSupport::TestCase
     assert new_order.save
     
     # Search for an existent line item of ANOTHER order.
-    assert_equal an_order.has_line_item?(new_order.order_line_items.find_by_name(items(:small_stuff).name).id), false
+    assert_equal @order.has_line_item?(new_order.order_line_items.find_by_name(items(:small_stuff).name).id), false
   end
   
   
@@ -538,8 +423,7 @@ class OrderTest < ActiveSupport::TestCase
   # TODO: The comment about how to use this method and how it is really being used are different.
   # Why use a line item id, it is meaningless. Probably the current use and the method code are wrong.
   def test_get_line_item_quantity
-    an_order = orders(:santa_next_christmas_order)
-    assert_equal an_order.get_line_item_quantity(an_order.order_line_items.find_by_name(items(:towel).name).id), order_line_items(:santa_next_christmas_order_item_6).quantity
+    assert_equal @order.get_line_item_quantity(@order.order_line_items.find_by_name(items(:towel).name).id), order_line_items(:santa_next_christmas_order_item_6).quantity
 
     # Create a new order and put just one line item.
     new_order_line_item = OrderLineItem.for_product(items(:small_stuff))
@@ -548,7 +432,7 @@ class OrderTest < ActiveSupport::TestCase
     assert new_order.save
     
     # Search for an existent line item of ANOTHER order.
-    assert_equal an_order.get_line_item_quantity(new_order.order_line_items.find_by_name(items(:small_stuff).name).id), 0
+    assert_equal @order.get_line_item_quantity(new_order.order_line_items.find_by_name(items(:small_stuff).name).id), 0
   end
 
 
@@ -556,8 +440,7 @@ class OrderTest < ActiveSupport::TestCase
   # TODO: The comment about how to use this method and how it is really being used are different.
   # Why use a line item id, it is meaningless. Probably the current use and the method code are wrong.
   def test_get_line_item_total
-    an_order = orders(:santa_next_christmas_order)
-    assert_equal an_order.get_line_item_total(an_order.order_line_items.find_by_name(items(:towel).name).id), order_line_items(:santa_next_christmas_order_item_6).total
+    assert_equal @order.get_line_item_total(@order.order_line_items.find_by_name(items(:towel).name).id), order_line_items(:santa_next_christmas_order_item_6).total
 
     # Create a new order and put just one line item.
     new_order_line_item = OrderLineItem.for_product(items(:small_stuff))
@@ -566,60 +449,54 @@ class OrderTest < ActiveSupport::TestCase
     assert new_order.save
     
     # Search for an existent line item of ANOTHER order.
-    assert_equal an_order.get_line_item_total(new_order.order_line_items.find_by_name(items(:small_stuff).name).id), 0
+    assert_equal @order.get_line_item_total(new_order.order_line_items.find_by_name(items(:small_stuff).name).id), 0
   end
 
 
   # Test an order to see if it will correctly show all line items total.
   def test_get_all_line_items_total
-    an_order = orders(:santa_next_christmas_order)
-    assert_equal an_order.line_items_total, an_order.order_line_items.collect{ |p| p.unit_price * p.quantity }.sum
+    assert_equal @order.line_items_total, @order.order_line_items.collect{ |p| p.unit_price * p.quantity }.sum
   end
 
 
   def test_new_notes_update_attr
     # Notes need to be NIL in order to test an edge case error.
-    @santa_order.update_attribute(:notes, nil)
+    @order.update_attribute(:notes, nil)
     # ^^ DONT REMOVE THIS
-    @santa_order.update_attributes({
+    @order.update_attributes({
       :new_notes => 'Hello world.'
     })
-    @santa_order.reload
-    assert_not_nil @santa_order.notes
-    assert @santa_order.notes.include?("<span class=\"info\">")
+    @order.reload
+    assert_not_nil @order.notes
+    assert @order.notes.include?("<span class=\"info\">")
   end  
 
   # Test an order to see if the correct total weight will be returned.
   def test_return_total_weight
-    an_order = orders(:santa_next_christmas_order)
     calculated_weight = 0
-    an_order.order_line_items.each do |item|
+    @order.order_line_items.each do |item|
       calculated_weight += item.quantity * item.product.weight
     end
-    assert_equal an_order.weight, calculated_weight
+    assert_equal @order.weight, calculated_weight
   end
-  
   
   # Test an order to see if a flat shipping price will be returned.
+  # TODO: Should this method really be here?
   def test_get_flat_shipping_price
-    # TODO: Should this method really be here?
-    an_order = Order.new
-    assert_equal an_order.get_flat_shipping_price, Preference.find_by_name('store_handling_fee').value.to_f
+    assert_equal @order.get_flat_shipping_price, Preference.find_by_name('store_handling_fee').value.to_f
   end
-  
   
   # Test an order to see if the correct shipping prices will be returned.
   def test_get_shipping_prices
     # Test a national shipping order.
-    an_order = orders(:santa_next_christmas_order)
-    assert_same_elements an_order.get_shipping_prices, OrderShippingType.get_domestic
+    assert_same_elements @order.get_shipping_prices, OrderShippingType.get_domestic
     
     # Turn it into an international one and test.
     an_address = order_addresses(:santa_address)
     an_address.country = countries(:GB)
     an_address.save
-    an_order.reload
-    assert_same_elements an_order.get_shipping_prices, OrderShippingType.get_foreign
+    @order.reload
+    assert_same_elements @order.get_shipping_prices, OrderShippingType.get_foreign
     
     # Now we say that we are in that same other country.
     prefs = {
@@ -628,28 +505,28 @@ class OrderTest < ActiveSupport::TestCase
     assert Preference.save_settings(prefs)
     
     # And that same shipment should be national now.
-    assert_same_elements an_order.get_shipping_prices, OrderShippingType.get_domestic
+    assert_same_elements @order.get_shipping_prices, OrderShippingType.get_domestic
   end
   
   
   # Run a payment transaction of the type defined in preferences.
-  def test_run_transaction
-    # Get any order.
-    an_order = orders(:santa_next_christmas_order)
-    
-    # Now we say that we will use authorize. Mock the method and test it.
+  def test_run_transaction_authorize
     assert Preference.save_settings({ "cc_processor" => "Authorize.net" })
     Order.any_instance.expects(:run_transaction_authorize).once.returns('executed_authorize')
-    assert_equal an_order.run_transaction, "executed_authorize"
+    assert_equal @order.run_transaction, "executed_authorize"
+  end
 
+  def test_run_transaction_paypal_ipn
     # Now we say that we will use paypal ipn. Mock the method and test it.
     assert Preference.save_settings({ "cc_processor" => "PayPal IPN" })
     Order.any_instance.expects(:run_transaction_paypal_ipn).once.returns('executed_paypal_ipn')
-    assert_equal an_order.run_transaction, "executed_paypal_ipn"
+    assert_equal @order.run_transaction, "executed_paypal_ipn"
+  end
 
+  def test_run_transaction_invalid
     # Now we say that we will use a non existent processor.
     assert Preference.save_settings({ "cc_processor" => "Nonexistent" })
-    assert_throws(:"The currently set preference for cc_processor is not recognized. You might want to add it to the code..."){an_order.run_transaction}
+    assert_throws(:"The currently set preference for cc_processor is not recognized. You might want to add it to the code..."){@order.run_transaction}
   end
 
 
@@ -674,9 +551,6 @@ class OrderTest < ActiveSupport::TestCase
     ActionMailer::Base.perform_deliveries = true
     ActionMailer::Base.deliveries = []
     initial_mbox_length = ActionMailer::Base.deliveries.length
-
-    # Get any order.
-    an_order = orders(:santa_next_christmas_order)
     
     # Create a standard success response. Parameters: success, message, params = {}, options = {}
     a_positive_response = ActiveMerchant::Billing::Response.new(
@@ -701,7 +575,7 @@ class OrderTest < ActiveSupport::TestCase
     ActiveMerchant::Billing::AuthorizeNetGateway.any_instance.stubs(:purchase).returns(a_positive_response)
 
     # Assert that with a success response the method will return true.
-    assert_equal an_order.run_transaction_authorize, true
+    assert_equal @order.run_transaction_authorize, true
 
     # We should have received a mail about that.
     assert_equal ActionMailer::Base.deliveries.length, initial_mbox_length + 1
@@ -711,7 +585,7 @@ class OrderTest < ActiveSupport::TestCase
     Order.any_instance.stubs(:deliver_receipt).raises('An error!')
     
     # Run the transaction again.
-    an_order.run_transaction_authorize
+    @order.run_transaction_authorize
     # We don't need to assert the raise because it will be caugh in run_transaction_authorize.
 
     # We should NOT have received a mail about that.
@@ -726,9 +600,6 @@ class OrderTest < ActiveSupport::TestCase
     ActionMailer::Base.perform_deliveries = true
     ActionMailer::Base.deliveries = []
     initial_mbox_length = ActionMailer::Base.deliveries.length
-
-    # Get any order.
-    an_order = orders(:santa_next_christmas_order)
     
     # Create a standard failure response when cc number is wrong. Parameters: success, message, params = {}, options = {}
     a_negative_response = ActiveMerchant::Billing::Response.new(
@@ -753,7 +624,7 @@ class OrderTest < ActiveSupport::TestCase
     ActiveMerchant::Billing::AuthorizeNetGateway.any_instance.stubs(:purchase).returns(a_negative_response)
 
     # Assert that with a failure response the method will return the response message.
-    assert_equal an_order.run_transaction_authorize, a_negative_response.message
+    assert_equal @order.run_transaction_authorize, a_negative_response.message
 
     # We should have received a mail about that.
     assert_equal ActionMailer::Base.deliveries.length, initial_mbox_length + 1
@@ -763,7 +634,7 @@ class OrderTest < ActiveSupport::TestCase
     Order.any_instance.stubs(:deliver_failed).raises('An error!')
     
     # Run the transaction again.
-    an_order.run_transaction_authorize
+    @order.run_transaction_authorize
     # We don't need to assert the raise because it will be caugh in run_transaction_authorize.
 
     # We should NOT have received a mail about that.
@@ -775,133 +646,71 @@ class OrderTest < ActiveSupport::TestCase
   # TODO: This method don't run a transaction, it only change the status code and add a note.
   # TODO: Could't configure Paypal IPN to work.
   def test_run_transaction_paypal_ipn
-    # Create a new order, incomplete, just to work with.
-    an_order_line_item = OrderLineItem.for_product(items(:small_stuff))
+    notes = "Original notes"
+    setup_new_order()
 
-    an_order = Order.new
-    
-    an_order.order_line_items << an_order_line_item
-    an_order.tax = 0.0
-    an_order.product_cost = 1.25
-    an_order.created_on = 1.day.ago
-    an_order.shipping_address = order_addresses(:uncle_scrooge_address)
-    an_order.customer = order_users(:uncle_scrooge)
-    an_order.billing_address = order_addresses(:uncle_scrooge_address)
-    an_order.shipped_on = "" 
-    an_order.order_shipping_type = order_shipping_types(:ups_xp_critical)
-    an_order.promotion_id = 0
-    an_order.notes = '<p>Order completed.<br/><span class="info">[04-04-08 05:18 PM]</span></p>'
-    an_order.referer = "" 
-    an_order.shipping_cost = 30.0
-    an_order.order_number = Order.generate_order_number
-    an_order.order_account = order_accounts(:uncle_scrooge_account)
-    an_order.auth_transaction_id = "" 
-    an_order.order_status_code = order_status_codes(:cart)
-
-    assert an_order.save
-    
-    notes_before = an_order.notes.dup
+    @o.notes = notes.dup
+    assert @o.save
 
     # Running it should return the new status code.
-    assert_equal an_order.run_transaction_paypal_ipn, order_status_codes(:on_hold_awaiting_payment).id
+    assert_equal @o.run_transaction_paypal_ipn, order_status_codes(:on_hold_awaiting_payment).id
     # A new note should be added.
-    notes_after = an_order.notes
-    assert_not_equal notes_before, notes_after
+    assert_not_equal notes, @o.notes
   end
 
 
   # Test the cleaning of a successful order.
   def test_cleanup_successful
-    # Create a new order.
-    an_order_line_item = OrderLineItem.for_product(items(:small_stuff))
+    setup_new_order()
+    @o.order_line_items << @li
+    @o.order_status_code = order_status_codes(:cart)
+    @o.notes = "test test"
+    assert @o.save
 
-    an_order = Order.new
-    
-    an_order.order_line_items << an_order_line_item
-    an_order.tax = 0.0
-    an_order.product_cost = 1.25
-    an_order.created_on = 1.day.ago
-    an_order.shipping_address = order_addresses(:uncle_scrooge_address)
-    an_order.customer = order_users(:uncle_scrooge)
-    an_order.billing_address = order_addresses(:uncle_scrooge_address)
-    an_order.shipped_on = "" 
-    an_order.order_shipping_type = order_shipping_types(:ups_xp_critical)
-    an_order.promotion_id = 0
-    an_order.notes = ''
-    an_order.referer = "" 
-    an_order.shipping_cost = 30.0
-    an_order.order_number = Order.generate_order_number
-    an_order.order_account = order_accounts(:uncle_scrooge_account)
-    an_order.auth_transaction_id = "" 
-    an_order.order_status_code = order_status_codes(:cart)
-
-    assert an_order.save
-    assert_equal an_order.order_status_code, order_status_codes(:cart)
-    
     # Make sure inventory control is enabled.
     assert Preference.find_by_name('store_use_inventory_control').is_true?
     # Make sure cc number obfuscation is enabled.
     assert Preference.find_by_name('cc_clear_after_order').is_true?
     
-    initial_quantity = an_order_line_item.item.quantity
-    notes_before = an_order.notes.clone
+    initial_quantity = @li.item.quantity
+    notes_before = @o.notes.clone
     
-    an_order.cleanup_successful
-    
-    an_order_line_item.item.reload
+    @o.cleanup_successful
+    @li.item.reload
     
     # Quantity should be updated.
-    assert_equal an_order_line_item.item.quantity, (initial_quantity - an_order_line_item.quantity)
+    assert_equal @li.item.quantity, (initial_quantity - @li.quantity)
     # Status code should be updated.
-    an_order.reload
-    assert_equal an_order.order_status_code, order_status_codes(:ordered_paid_to_ship)
+    @o.reload
+    assert_equal @o.order_status_code, order_status_codes(:ordered_paid_to_ship)
     
     # CC number should be obfuscated.
-    number_len = an_order.account.cc_number.length
-    new_cc_number = an_order.account.cc_number[number_len - 4, number_len].rjust(number_len, 'X')
-    assert_equal an_order.account.cc_number, new_cc_number
+    number_len = @o.account.cc_number.length
+    new_cc_number = @o.account.cc_number[number_len - 4, number_len].rjust(number_len, 'X')
+    assert_equal @o.account.cc_number, new_cc_number
     
     # A new note should be added.
-    notes_after = an_order.notes
+    notes_after = @o.notes
     assert_not_equal notes_before, notes_after
   end
 
 
   # Test the cleaning of a failed order.
   def test_cleanup_failed
-    # Create a new order.
-    an_order_line_item = OrderLineItem.for_product(items(:small_stuff))
-
-    an_order = Order.new
+    setup_new_order()
+    @o.order_line_items << @li
+    @o.order_status_code = order_status_codes(:cart)
+    @o.notes = "test test"
+    assert @o.save
     
-    an_order.order_line_items << an_order_line_item
-    an_order.tax = 0.0
-    an_order.product_cost = 1.25
-    an_order.created_on = 1.day.ago
-    an_order.shipping_address = order_addresses(:uncle_scrooge_address)
-    an_order.customer = order_users(:uncle_scrooge)
-    an_order.billing_address = order_addresses(:uncle_scrooge_address)
-    an_order.shipped_on = "" 
-    an_order.order_shipping_type = order_shipping_types(:ups_xp_critical)
-    an_order.promotion_id = 0
-    an_order.notes = '<p>Order completed.<br/><span class="info">[04-04-08 05:18 PM]</span></p>'
-    an_order.referer = "" 
-    an_order.shipping_cost = 30.0
-    an_order.order_number = Order.generate_order_number
-    an_order.order_account = order_accounts(:uncle_scrooge_account)
-    an_order.auth_transaction_id = "" 
-    an_order.order_status_code = order_status_codes(:cart)
+    notes_before = @o.notes.dup
 
-    assert an_order.save
-    
-    notes_before = an_order.notes.dup
-
-    an_order.cleanup_failed("A message!")
+    @o.cleanup_failed("A message!")
     
     # Status code should be updated.
-    assert_equal an_order.order_status_code, order_status_codes(:on_hold_payment_failed)
+    assert_equal @o.order_status_code, order_status_codes(:on_hold_payment_failed)
     # A new note should be added.
-    notes_after = an_order.notes
+    notes_after = @o.notes
     assert_not_equal notes_before, notes_after
   end
 
@@ -915,8 +724,7 @@ class OrderTest < ActiveSupport::TestCase
     initial_mbox_length = ActionMailer::Base.deliveries.length
 
     # Get any order.
-    an_order = orders(:santa_next_christmas_order)
-    an_order.deliver_receipt    
+    @order.deliver_receipt    
 
     # We should have received a mail about that.
     assert_equal ActionMailer::Base.deliveries.length, initial_mbox_length + 1
@@ -927,7 +735,7 @@ class OrderTest < ActiveSupport::TestCase
     begin
       assert receipt_content.update_attributes(:name => 'order_receipt')
 
-      an_order.deliver_receipt    
+      @order.deliver_receipt    
 
       # We should NOT have received a mail about that.
       assert_equal ActionMailer::Base.deliveries.length, initial_mbox_length + 1
@@ -946,9 +754,7 @@ class OrderTest < ActiveSupport::TestCase
     ActionMailer::Base.deliveries = []
     initial_mbox_length = ActionMailer::Base.deliveries.length
 
-    # Get any order.
-    an_order = orders(:santa_next_christmas_order)
-    an_order.deliver_failed    
+    @order.deliver_failed    
 
     # We should have received a mail about that.
     assert_equal ActionMailer::Base.deliveries.length, initial_mbox_length + 1
@@ -957,61 +763,19 @@ class OrderTest < ActiveSupport::TestCase
 
   # Test the order have a promotion applied.
   def test_say_if_is_discounted
-    a_promotion = promotions(:percent_rebate)
-    an_order_line_item = OrderLineItem.for_product(items(:small_stuff))
- 
-    an_order = Order.new
+    setup_new_order_with_items()
+    promo = promotions(:percent_rebate)
     
-    an_order.order_line_items << an_order_line_item
-    an_order.tax = 0.0
-    an_order.created_on = 1.day.ago
-    an_order.shipping_address = order_addresses(:uncle_scrooge_address)
-    an_order.customer = order_users(:uncle_scrooge)
-    an_order.billing_address = order_addresses(:uncle_scrooge_address)
-    an_order.shipped_on = "" 
-    an_order.order_shipping_type = order_shipping_types(:ups_xp_critical)
-    an_order.notes = '<p>Order completed.<br/><span class="info">[04-04-08 05:18 PM]</span></p>'
-    an_order.referer = "" 
-    an_order.shipping_cost = 30.0
-    an_order.order_number = Order.generate_order_number
-    an_order.order_account = order_accounts(:uncle_scrooge_account)
-    an_order.auth_transaction_id = "" 
-    an_order.order_status_code = order_status_codes(:ordered_paid_to_ship)
-    
-    assert !an_order.is_discounted?
-    an_order.promotion_code = a_promotion.code
-    an_order.set_promo_code
-    assert an_order.is_discounted?
+    assert !@order.is_discounted?
+    @order.promotion_code = promo.code
+    @order.set_promo_code
+    assert @order.is_discounted?
   end
   
   
   # Test if the contents of the IPN posted back are in conformity with what was sent, here the IPN is validated.
   def test_say_if_matches_ipn
-    # Create a new order.
-    an_order_line_item = OrderLineItem.for_product(items(:small_stuff))
-    another_order_line_item = OrderLineItem.for_product(items(:towel))
-
-    an_order = Order.new
-    
-    an_order.order_line_items << an_order_line_item
-    an_order.order_line_items << another_order_line_item
-    an_order.tax = 0.0
-    an_order.created_on = 1.day.ago
-    an_order.shipping_address = order_addresses(:uncle_scrooge_address)
-    an_order.customer = order_users(:uncle_scrooge)
-    an_order.billing_address = order_addresses(:uncle_scrooge_address)
-    an_order.shipped_on = "" 
-    an_order.order_shipping_type = order_shipping_types(:ups_ground)
-    an_order.promotion_id = 0
-    an_order.notes = '<p>Order completed.<br/><span class="info">[04-04-08 05:18 PM]</span></p>'
-    an_order.referer = "" 
-    an_order.shipping_cost = 11.0
-    an_order.order_number = Order.generate_order_number
-    an_order.order_account = order_accounts(:uncle_scrooge_account)
-    an_order.auth_transaction_id = "" 
-    an_order.order_status_code = order_status_codes(:cart)
-
-    assert an_order.save
+    setup_new_order_with_items()
     
     # TODO: Take a look closely how these params are filled in the paypal guides.
     # Create a fake hash to be used as params and to generate the query string.
@@ -1029,26 +793,26 @@ class OrderTest < ActiveSupport::TestCase
       :custom => "",
       :first_name => "Test",
       :last_name => "User",
-      :invoice => an_order.order_number,
+      :invoice => @order.order_number,
       
-      :item_name1 => an_order.order_line_items[0].name,
-      :item_name2 => an_order.order_line_items[1].name,
+      :item_name1 => @order.order_line_items[0].name,
+      :item_name2 => @order.order_line_items[1].name,
       :item_number1 => "",
       :item_number2 => "",
       :mc_currency => "USD",
       :mc_fee => "0.93",
-      :mc_gross => an_order.line_items_total + an_order.shipping_cost,
+      :mc_gross => @order.line_items_total + @order.shipping_cost,
       # Why the shipping cost is here?
-      :mc_gross_1 => an_order.order_line_items[0].total + an_order.shipping_cost,
-      :mc_gross_2 => an_order.order_line_items[1].total,
+      :mc_gross_1 => @order.order_line_items[0].total + @order.shipping_cost,
+      :mc_gross_2 => @order.order_line_items[1].total,
       :mc_handling => "0.00",
       :mc_handling1 => "0.00",
       :mc_handling2 => "0.00",
-      :mc_shipping => an_order.shipping_cost,
-      :mc_shipping1 => an_order.shipping_cost,
+      :mc_shipping => @order.shipping_cost,
+      :mc_shipping1 => @order.shipping_cost,
       :mc_shipping2 => "0.00",
       :notify_version => "2.4",
-      :num_cart_items => an_order.order_line_items.length,
+      :num_cart_items => @order.order_line_items.length,
       :payer_email => "buyer@my.own.store",
       :payer_id => "3GQ2THTEB86ES",
       :payer_status => "verified",
@@ -1057,8 +821,8 @@ class OrderTest < ActiveSupport::TestCase
       :payment_gross => "21.75",
       :payment_status => "Completed",
       :payment_type => "instant",
-      :quantity1 => an_order.order_line_items[0].quantity,
-      :quantity2 => an_order.order_line_items[1].quantity,
+      :quantity1 => @order.order_line_items[0].quantity,
+      :quantity2 => @order.order_line_items[1].quantity,
       :receiver_email => "seller@my.own.store",
       :receiver_id => "TFLJN8N28W6VW",
       :residence_country => "US",
@@ -1080,20 +844,20 @@ class OrderTest < ActiveSupport::TestCase
     complete_params = fake_params.merge({ :action => "ipn", :controller => "paypal" })
     
     # Test a call that should succeed.
-    assert Order.matches_ipn(notification, an_order, complete_params)
+    assert Order.matches_ipn(notification, @order, complete_params)
 
     # Change the parameter mc_gross and it should fail.
     wrong_notification = ActiveMerchant::Billing::Integrations::Paypal::Notification.new(fake_params.merge({ :mc_gross => "2.00" }).to_query)
-    assert !Order.matches_ipn(wrong_notification, an_order, complete_params), "It should have failed because :mc_gross."
+    assert !Order.matches_ipn(wrong_notification, @order, complete_params), "It should have failed because :mc_gross."
 
     # Change the parameter business and it should fail.
-    assert !Order.matches_ipn(notification, an_order, complete_params.merge({ :business => "somebody@else" })), "It should have failed because :business."
+    assert !Order.matches_ipn(notification, @order, complete_params.merge({ :business => "somebody@else" })), "It should have failed because :business."
 
     # It should fail if finds another order with the same txn_id.
     another_order = orders(:santa_next_christmas_order)
     another_order.auth_transaction_id = fake_params[:txn_id]
     another_order.save
-    assert !Order.matches_ipn(notification, an_order, complete_params), "It should have failed because another order already have this txn_id."
+    assert !Order.matches_ipn(notification, @order, complete_params), "It should have failed because another order already have this txn_id."
  end
   
 
@@ -1106,25 +870,22 @@ class OrderTest < ActiveSupport::TestCase
     ActionMailer::Base.deliveries = []
     initial_mbox_length = ActionMailer::Base.deliveries.length
 
-    # Get any order.
-    an_order = orders(:santa_next_christmas_order)
-
-    notes_before = an_order.notes.dup
+    notes_before = @order.notes.dup
     
     # Set a fake fixed transaction id.
     txn_id = "3HY99478SV091020H"
     
     # Pass the order and the fake txn_id.
-    Order.pass_ipn(an_order, txn_id)
+    Order.pass_ipn(@order, txn_id)
     
     # TODO: The status code is being redefined in this method without need.
     # It will be redefined again in order.cleanup_successful.
 
     # Assert the transaction id was saved.
-    assert_equal an_order.auth_transaction_id, txn_id
+    assert_equal @order.auth_transaction_id, txn_id
 
     # A new note should be added.
-    notes_after = an_order.notes
+    notes_after = @order.notes
     assert_not_equal notes_before, notes_after
     
     # We should have received a mail about that.
@@ -1135,7 +896,7 @@ class OrderTest < ActiveSupport::TestCase
     Order.any_instance.stubs(:deliver_receipt).raises('An error!')
     
     # Pass the order and the fake txn_id.
-    Order.pass_ipn(an_order, txn_id)
+    Order.pass_ipn(@order, txn_id)
     # We don't need to assert the raise because it will be caugh in pass_ipn.
 
     # We should NOT have received a mail about that.
@@ -1152,19 +913,16 @@ class OrderTest < ActiveSupport::TestCase
     ActionMailer::Base.deliveries = []
     initial_mbox_length = ActionMailer::Base.deliveries.length
 
-    # Get any order.
-    an_order = orders(:santa_next_christmas_order)
-
-    notes_before = an_order.notes.dup
+    notes_before = @order.notes.dup
     
     # Pass the order.
-    Order.fail_ipn(an_order)
+    Order.fail_ipn(@order)
     
     # TODO: The status code is being redefined in this method without need.
     # It will be redefined again in order.cleanup_failed.
 
     # A new note should be added.
-    notes_after = an_order.notes
+    notes_after = @order.notes
     assert_not_equal notes_before, notes_after
     
     # We should have received a mail about that.
@@ -1175,7 +933,7 @@ class OrderTest < ActiveSupport::TestCase
     Order.any_instance.stubs(:deliver_failed).raises('An error!')
     
     # Pass the order.
-    Order.fail_ipn(an_order)
+    Order.fail_ipn(@order)
     # We don't need to assert the raise because it will be caugh in fail_ipn.
 
     # We should NOT have received a mail about that.
@@ -1325,8 +1083,8 @@ class OrderTest < ActiveSupport::TestCase
   end
 
   def test_has_downloads
-    assert_equal 1, @santa_order.downloads.count
-    assert_equal items(:towel).downloads, @santa_order.downloads
+    assert_equal 1, @order.downloads.count
+    assert_equal items(:towel).downloads, @order.downloads
   end
 
 end
