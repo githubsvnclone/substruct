@@ -364,6 +364,8 @@ class StoreController < ApplicationController
         @order = Order.create!
         session[:order_id] = @order.id
       end
+      # Ensure affiliate code is set properly
+      @order.affiliate_code = cookies[:affiliate]
     end
 
     # Sets order, but sends the customer back to the

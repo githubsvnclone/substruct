@@ -35,3 +35,6 @@ join_00000:
 join_00001: 
   role_id: "1"
   right_id: "4"
+join_affiliates: 
+  role_id: "1"
+  right_id: "20"

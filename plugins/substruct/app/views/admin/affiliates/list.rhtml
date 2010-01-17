@@ -1,0 +1,36 @@
+<div id="left">
+	<%= render :partial => '/admin/promotions/subnav' %>
+
+	<% if @affiliates.length == 0 then %>
+		<h4>No affiliates have been created.</h4>
+	<% else %>
+
+		<table class="list" cellpadding="0" cellspacing="0">
+			<colgroup>
+				<col/>
+				<col/>
+				<col style="width:100px;" />
+			</colgroup>
+			<tr>
+				<th>Code</th>
+				<th>Name</th>
+				<th># of Orders</th>
+			</tr>
+			<% for affil in @affiliates %>
+				<tr class="<%= alternate %>">
+					<td><%= link_to(affil.code, :action => 'edit', :id => affil) %></td>
+					<td>
+						<%= "#{affil.first_name} #{affil.last_name}" %>
+					</td>
+					<td class="numeric"><%= link_to(number_with_delimiter(affil.orders.size, ','), :action => 'show_orders', :id => affil) %></td>
+				</tr>
+			<% end %>
+		</table>
+
+
+	<% end %>
+</div>
+
+
+<%= render(:partial => 'right_side') %>
+

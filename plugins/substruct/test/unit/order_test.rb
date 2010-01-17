@@ -2,6 +2,7 @@ require File.dirname(__FILE__) + '/../test_helper'
 
 class OrderTest < ActiveSupport::TestCase
   fixtures(
+    :affiliates,
     :orders, :order_status_codes, :order_users, :order_accounts, 
     :order_shipping_types, :order_shipping_weights,
     :order_line_items, :order_addresses, 
@@ -458,19 +459,6 @@ class OrderTest < ActiveSupport::TestCase
     assert_equal @order.line_items_total, @order.order_line_items.collect{ |p| p.unit_price * p.quantity }.sum
   end
 
-
-  def test_new_notes_update_attr
-    # Notes need to be NIL in order to test an edge case error.
-    @order.update_attribute(:notes, nil)
-    # ^^ DONT REMOVE THIS
-    @order.update_attributes({
-      :new_notes => 'Hello world.'
-    })
-    @order.reload
-    assert_not_nil @order.notes
-    assert @order.notes.include?("<span class=\"info\">")
-  end  
-
   # Test an order to see if the correct total weight will be returned.
   def test_return_total_weight
     calculated_weight = 0
@@ -768,12 +756,12 @@ class OrderTest < ActiveSupport::TestCase
     
     assert !@order.is_discounted?
     @order.promotion_code = promo.code
-    @order.set_promo_code
     assert @order.is_discounted?
   end
   
   
-  # Test if the contents of the IPN posted back are in conformity with what was sent, here the IPN is validated.
+  # Test if the contents of the IPN posted back are in conformity 
+  # with what was sent, here the IPN is validated.
   def test_say_if_matches_ipn
     setup_new_order_with_items()
     
@@ -847,11 +835,23 @@ class OrderTest < ActiveSupport::TestCase
     assert Order.matches_ipn(notification, @order, complete_params)
 
     # Change the parameter mc_gross and it should fail.
-    wrong_notification = ActiveMerchant::Billing::Integrations::Paypal::Notification.new(fake_params.merge({ :mc_gross => "2.00" }).to_query)
-    assert !Order.matches_ipn(wrong_notification, @order, complete_params), "It should have failed because :mc_gross."
+    wrong_notification = ActiveMerchant::Billing::Integrations::Paypal::Notification.new(
+      fake_params.merge({ :mc_gross => "2.00" }).to_query
+    )
+    assert( 
+      !Order.matches_ipn(
+        wrong_notification, @order, complete_params
+      ), 
+      "It should have failed because :mc_gross."
+    )
 
     # Change the parameter business and it should fail.
-    assert !Order.matches_ipn(notification, @order, complete_params.merge({ :business => "somebody@else" })), "It should have failed because :business."
+    assert(
+      !Order.matches_ipn(
+        notification, @order, complete_params.merge({ :business => "somebody@else" })
+      ), 
+      "It should have failed because :business."
+    )
 
     # It should fail if finds another order with the same txn_id.
     another_order = orders(:santa_next_christmas_order)
@@ -968,6 +968,41 @@ class OrderTest < ActiveSupport::TestCase
     assert_equal a_cart.shipping_cost, 0.0
   end
 
+  def test_new_notes_setter
+    # Notes need to be NIL in order to test an edge case error.
+    @order.update_attribute(:notes, nil)
+    # ^^ DONT REMOVE THIS
+    @order.update_attributes({
+      :new_notes => 'Hello world.'
+    })
+    @order.reload
+    assert_not_nil @order.notes
+    assert @order.notes.include?("<span class=\"info\">")
+  end
+
+  # AFFILIATE CODE
+  
+  def test_affiliate_code_setter_invalid
+    fake_code = 'bogus_affiliate_code'
+    @order.affiliate_code = fake_code
+    # Verify
+    assert @order.affiliate.nil?
+    assert_equal fake_code, @order.promotion_code
+  end
+  
+  def test_affiliate_code_setter_nil
+    assert_nothing_raised { @order.affiliate_code = nil }
+  end
+  
+  def test_affiliate_code_setter_valid
+    affil = affiliates(:joes_marketing)
+    @order.affiliate_code = affil.code
+    # Verify
+    assert @order.save
+    assert_equal affil.code, @order.affiliate_code
+    assert_equal affil.code, @order.promotion_code
+    assert_equal affil, @order.affiliate
+  end
 
   # Test if a product can be added to the cart.
   def test_add_product

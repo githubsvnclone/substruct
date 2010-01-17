@@ -117,3 +117,18 @@ files_all:
   name: Files - Admin
   actions: "*"
   controller: files
+
+affiliates_all:
+  name: Affiliates - Admin
+  actions: "*"
+  controller: affiliates
+
+affiliates_crud:
+  name: Affiliates - CRUD
+  actions: "new,create,edit,update,destroy"
+  controller: affiliates
+
+affiliates_view: 
+  name: Affiliates - View
+  actions: "index,list,search,edit,show"
+  controller: affiliates

@@ -1,0 +1,10 @@
+joes_marketing: 
+  code: "joes+marketing"
+  first_name: "Joe"
+  last_name: "Blow"
+  telephone: "555-555-1212"
+  address: 155 Somewhere lane
+  city: Los Angeles
+  state: CA
+  zip: 95111
+  email_address: joe@joesmarketing.com

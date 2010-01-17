@@ -45,8 +45,11 @@
 			<li class="<%= @cname == 'products' ? 'active' : '' %>">
 				<%= link_to_section "Products", :controller=>"/admin/products" rescue nil %>
 			</li>
-			<li class="<%= @cname == 'promotions' ? 'active' : '' %>">
+			<li class="<%= (@cname == 'promotions') ? 'active' : '' %>">
 				<%= link_to_section "Promotions", :controller=>"/admin/promotions" rescue nil %>
+			</li>
+			<li class="<%= (@cname == 'affiliates') ? 'active' : '' %>">
+				<%= link_to_section "Affiliates", :controller=>"/admin/affiliates" rescue nil %>
 			</li>
 			<li class="<%= @cname == 'questions' ? 'active' : '' %>">
 				<%= link_to_section "Questions", :controller=>"/admin/questions" rescue nil %>

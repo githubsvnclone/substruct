@@ -9,7 +9,19 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 0) do
+ActiveRecord::Schema.define(:version => 33) do
+
+  create_table "affiliates", :force => true do |t|
+    t.string "code",          :limit => 15, :default => "", :null => false
+    t.string "first_name",    :limit => 50, :default => "", :null => false
+    t.string "last_name",     :limit => 50, :default => "", :null => false
+    t.string "telephone",     :limit => 20
+    t.string "address",                     :default => "", :null => false
+    t.string "city",          :limit => 50
+    t.string "state",         :limit => 10
+    t.string "zip",           :limit => 10
+    t.string "email_address", :limit => 50, :default => "", :null => false
+  end
 
   create_table "content_node_types", :force => true do |t|
     t.string "name", :limit => 50, :default => "", :null => false
@@ -152,6 +164,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.integer  "shipping_address_id",    :limit => 11, :default => 0,   :null => false
     t.integer  "billing_address_id",     :limit => 11, :default => 0,   :null => false
     t.integer  "order_account_id",       :limit => 11, :default => 0,   :null => false
+    t.integer  "affiliate_id",           :limit => 11, :default => 0,   :null => false
   end
 
   add_index "orders", ["order_number"], :name => "order_number"

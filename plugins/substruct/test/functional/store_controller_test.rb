@@ -31,6 +31,23 @@ class StoreControllerTest < ActionController::TestCase
     assert_not_nil assigns(:products)
   end
 
+  # Affiliate code cookie gets written by JS.
+  # Ensure it's applied to an order if we have that cookie present.
+  def test_affiliate_code_cookie
+    # Setup - write cookie
+    affil = affiliates(:joes_marketing)
+    # TODO: uncomment when moving to Rails 2.3
+    # @request.cookies[:affiliate] = affil.code
+    # Necessary for Rails < 2.3
+    @request.cookies['affiliate'] = CGI::Cookie.new('affiliate', affil.code)
+    # Exercise
+    get :index
+    assert_response :success
+    # Verify
+    assert_kind_of Order, assigns(:order)
+    assert_equal affil.code, assigns(:order).affiliate_code
+    assert_equal affil, assigns(:order).affiliate
+  end
 
   # We should get a list of products using a search term.
   def test_search_multiple_results

@@ -1,6 +1,8 @@
 class Order < ActiveRecord::Base  
   # Associations
   has_many :order_line_items, :dependent => :destroy
+  alias items order_line_items
+  
   # billing_address defined as a method!
   belongs_to :billing_address, 
     :class_name => 'OrderAddress',
@@ -9,6 +11,7 @@ class Order < ActiveRecord::Base
     :class_name => 'OrderAddress',
     :foreign_key => 'shipping_address_id'
   belongs_to :order_account
+  alias account order_account
 
   # Alias better name than "order_user"
   belongs_to :customer, :class_name => 'OrderUser', :foreign_key => 'order_user_id' 
@@ -17,6 +20,7 @@ class Order < ActiveRecord::Base
   belongs_to :order_shipping_type
   belongs_to :order_status_code
   belongs_to :promotion
+  belongs_to :affiliate
   
   has_many :downloads, 
     :finder_sql => %q\
@@ -42,7 +46,9 @@ class Order < ActiveRecord::Base
       )
     \
 
-	attr_accessor :promotion_code
+	attr_reader :promotion_code
+	attr_reader :affiliate_code
+	attr_reader :new_notes
 
   # VALIDATION ================================================================
 	validates_presence_of :order_number
@@ -70,90 +76,6 @@ class Order < ActiveRecord::Base
     self.product_cost = self.line_items_total
     return true
   end
-  
-  # Modifies the order based on any promotion codes passed in.
-  #
-  # This can add discounts to the order or add items.
-  #
-  # Returns silently and just doesn't add the promo if something
-  # is wrong.
-  #
-  before_save :set_promo_code
-  def set_promo_code
-    # Find promotion based on code entered
-    promo = Promotion.find(
-      :first,
-      :conditions => ["code = ?", self.promotion_code]
-    )
-    # No promo code? Not active? No deal...
-    return if !promo || !promo.is_active?
-
-    # Don't allow more than one promotion?
-    # This destroys any line items created previously.
-    self.order_line_items.delete(self.promotion_line_item) if self.promotion_line_item
-    
-    # Make sure it's valid to add
-    if promo.minimum_cart_value
-      return if promo.minimum_cart_value > self.line_items_total
-    end
-    logger.info "PROMO MIN CART VALUE PASSED"
-    
-    # Assign proper promotion ID
-    self.promotion = promo
-    
-    # Add any line items necessary from promotion.
-    oli = OrderLineItem.new
-    logger.info "CREATED OLI"
-    # Set name & item...
-    oli.name = promo.description
-    oli.item_id = promo.item_id
-    
-    # Figure out how to apply the promotion
-    case promo.discount_type
-      # Dollars
-      when 0 then
-        oli.quantity = 1
-        oli.unit_price = -promo.discount_amount
-      #
-      # Percent
-      when 1 then
-        oli.quantity = 1
-        oli.unit_price = -(self.line_items_total * (promo.discount_amount/100))
-      #
-      # Buy N get 1 free
-      when 2 then
-        item = self.order_line_items.detect { |i| i.item_id == promo.item_id }
-        if item && item.quantity >= promo.discount_amount.to_i
-          oli.quantity = item.quantity / promo.discount_amount.to_i
-          logger.info "ITEM QUANTITY #{oli.quantity}"
-        else
-          return
-        end
-    end
-    
-    self.order_line_items << oli
-    return true
-  end
-  
-  
-	# Adds a new order note from the edit page.
-	# We display notes as read-only, so we only have to use a text field
-	# instead of multiple records.
-	attr_accessor :new_notes
-	before_save :set_new_notes
-	def set_new_notes()
-		unless self.new_notes.blank?
-			time = Time.now.strftime("%m-%d-%y %I:%M %p")
-			new_note = "<p>#{self.new_notes}<br/>"
-			new_note << "<span class=\"info\">"
-			new_note << "[#{time}]"
-			new_note << "</span></p>"
-			self.notes ||= ''
-			write_attribute(:notes, self.notes + new_note)
-			self.new_notes = nil
-		end
-		return true
-	end
   
   # CLASS METHODS =============================================================
 
@@ -454,7 +376,98 @@ class Order < ActiveRecord::Base
 
   # INSTANCE METHODS ==========================================================
 
-  def items; self.order_line_items; end
+  # Modifies the order based on any promotion codes passed in.
+  # This can add discounts to the order or add items.
+  # Returns silently and doesn't add the promo if something is wrong.
+  def promotion_code=(code)
+    @promotion_code = code
+    # Find promotion based on code entered
+    promo = Promotion.find(
+      :first,
+      :conditions => ["code = ?", @promotion_code]
+    )
+    # No promo code? Not active? No deal...
+    return if !promo || !promo.is_active?
+
+    # Don't allow more than one promotion?
+    # This destroys any line items created previously.
+    self.order_line_items.delete(self.promotion_line_item) if self.promotion_line_item
+    
+    # Make sure it's valid to add
+    if promo.minimum_cart_value
+      return if promo.minimum_cart_value > self.line_items_total
+    end
+    logger.info "PROMO MIN CART VALUE PASSED"
+    
+    # Assign proper promotion ID
+    self.promotion = promo
+    
+    # Add any line items necessary from promotion.
+    oli = OrderLineItem.new
+    logger.info "CREATED OLI"
+    # Set name & item...
+    oli.name = promo.description
+    oli.item_id = promo.item_id
+    
+    # Figure out how to apply the promotion
+    case promo.discount_type
+      # Dollars
+      when 0 then
+        oli.quantity = 1
+        oli.unit_price = -promo.discount_amount
+      #
+      # Percent
+      when 1 then
+        oli.quantity = 1
+        oli.unit_price = -(self.line_items_total * (promo.discount_amount/100))
+      #
+      # Buy N get 1 free
+      when 2 then
+        item = self.order_line_items.detect { |i| i.item_id == promo.item_id }
+        if item && item.quantity >= promo.discount_amount.to_i
+          oli.quantity = item.quantity / promo.discount_amount.to_i
+          logger.info "ITEM QUANTITY #{oli.quantity}"
+        else
+          return
+        end
+    end
+    
+    self.order_line_items << oli
+  end
+
+
+  # If affiliate_code is filled in, this tries to find 
+  # a matching Affiliate and fill in affiliate_id.
+  #
+  # This links orders with affiliates.
+  #
+  # It also attempts to set promotion code.
+  def affiliate_code=(code='')
+    sanitized_code = code.strip unless code.blank?
+    @affiliate_code = self.promotion_code = sanitized_code
+    #self.promotion_code = sanitized_code
+    unless self.affiliate_code.blank?
+      self.affiliate = Affiliate.find_by_code(self.affiliate_code)
+    end
+  end  
+  
+  
+	# Adds a new order note from the edit page.
+	# We display notes as read-only, so we only have to use a text field
+	# instead of multiple records.
+	def new_notes=(text)
+	  @new_notes = text
+	  return if @new_notes.blank?
+	  
+		time = Time.now.strftime("%m-%d-%y %I:%M %p")
+		new_note = "<p>#{@new_notes}<br/>"
+		new_note << "<span class=\"info\">"
+		new_note << "[#{time}]"
+		new_note << "</span></p>"
+		self.notes ||= ''
+		write_attribute(:notes, self.notes + new_note)
+		self.new_notes = nil
+	end
 
   # Adds a product to our shopping cart
   def add_product(product, quantity=1)
@@ -534,8 +547,6 @@ class Order < ActiveRecord::Base
     return removed_items
   end
 	
-
-
   # Shortcut to find order_line_item for a promotion that has been applied.
   def promotion_line_item
     if self.promotion
@@ -551,18 +562,12 @@ class Order < ActiveRecord::Base
     code.name
   end
 
-  # Shortcut to items
-  def items
-    self.order_line_items
-  end
-
 	# Total for the order, including shipping and tax.
-	#
   def total
-    logger.info "CALCULATING SHIPPING TOTAL"
-    logger.info "LINE ITEMS TOTAL: #{self.line_items_total}"
-    logger.info "SHIPPING COST: #{self.shipping_cost}"
-    logger.info "TAX COST: #{self.tax_cost}"
+    logger.debug "CALCULATING SHIPPING TOTAL"
+    logger.debug "LINE ITEMS TOTAL: #{self.line_items_total}"
+    logger.debug "SHIPPING COST: #{self.shipping_cost}"
+    logger.debug "TAX COST: #{self.tax_cost}"
     self.line_items_total + self.shipping_cost + self.tax_cost
   end
   
@@ -575,10 +580,7 @@ class Order < ActiveRecord::Base
   def name
     "#{billing_address.first_name} #{billing_address.last_name}" rescue ''
   end
-
-  def account
-    self.order_account
-  end
+  
 
 	# Sets line items from the product output table on the edit page.
 	#
