@@ -35,14 +35,28 @@ class ContentNodesController < ApplicationController
   end
 
   # Shows all blog content nodes.
+  # Can render HTML or RSS format.
   def index
-		@title = "Blog"
-    @content_nodes = Blog.paginate(
-      :conditions => 'display_on <= CURRENT_DATE',
-      :page => params[:page],
-      :per_page => 5,
-      :order => 'display_on DESC, created_on DESC'
-    )
+    @title = "Blog"
+    respond_to do |format|
+      format.html do
+        @content_nodes = Blog.paginate(
+          :conditions => 'display_on <= CURRENT_DATE',
+          :page => params[:page],
+          :per_page => 5,
+          :order => 'display_on DESC, created_on DESC'
+        )
+        render :action => 'index.rhtml' and return
+      end
+      format.rss do
+        @content_nodes = Blog.find(
+          :all,
+          :conditions => 'display_on <= CURRENT_DATE',
+          :order => 'display_on DESC, created_on DESC'
+        )
+        render :action => 'index.rxml', :layout => false and return
+      end
+    end
   end
   
   # Lists blog entries by section

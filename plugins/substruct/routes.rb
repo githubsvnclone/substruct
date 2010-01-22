@@ -26,6 +26,8 @@ connect '/blog/:name',
   :controller => 'content_nodes',
   :action     => 'show_by_name'
 
+connect 'blog/:action.:format',
+  :controller => 'content_nodes'
 
 connect '/contact',
   :controller => 'questions',
@@ -38,6 +40,7 @@ connect '/store/show_by_tags/*tags',
 # Install the default route as the lowest priority.
 connect ':controller/:action/:id.:format'
 connect ':controller/:action/:id'
+
 
 # For things like /about_us, etc
 connect ':name',

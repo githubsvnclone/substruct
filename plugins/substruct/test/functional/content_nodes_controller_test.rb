@@ -5,7 +5,7 @@ class ContentNodesControllerTest < ActionController::TestCase
 
 
   # Test the show action.
-  def test_should_show_by_id
+  def test_show_by_id
     # TODO: Template is missing for this action.
     a_content_node = content_nodes(:home)
     
@@ -16,7 +16,7 @@ class ContentNodesControllerTest < ActionController::TestCase
 
 
   # Test the show by name action.
-  def test_should_show_by_name
+  def test_show_by_name_page
     a_content_node = content_nodes(:home)
     
     get :show_by_name, :name => a_content_node.name
@@ -27,12 +27,9 @@ class ContentNodesControllerTest < ActionController::TestCase
     
     # Assert the content node is being shown.
     assert_select "h1", :count => 1, :text => /Welcome to Substruct/
+  end
 
-
-    # TODO: There's no way to test it using a content node that haves a blank title.
-
-
-    # Now using a blog post.
+  def test_show_by_name_blog_post
     a_content_node = content_nodes(:silent_birth)
     
     get :show_by_name, :name => a_content_node.name
@@ -44,7 +41,6 @@ class ContentNodesControllerTest < ActionController::TestCase
     # Assert the content node is being shown.
     assert_select "p", :count => 1, :text => /According to the creator of/
 
-
     # Now using an invalid name.
     get :show_by_name, :name => "bleargh"
     assert_response :missing
@@ -52,9 +48,7 @@ class ContentNodesControllerTest < ActionController::TestCase
   
   
   # Test the show snippet action.
-  def test_should_show_snippet
-    # TODO: This method isn't used anywhere.
-    
+  def test_snippet
     # Now using a snippet.
     a_content_node = content_nodes(:order_receipt)
     
@@ -69,11 +63,11 @@ class ContentNodesControllerTest < ActionController::TestCase
 
 
   # Test the index action, showing the blog.
-  def test_should_show_index
+  def test_index
     get :index
     assert_response :success
     assert_equal assigns(:title), "Blog"
-    assert_template 'index'
+    assert_template 'index.rhtml'
     assert_not_nil assigns(:content_nodes)
     
     # Assert the blog posts are being shown.
@@ -82,9 +76,15 @@ class ContentNodesControllerTest < ActionController::TestCase
     assert_select "a", :count => 1, :text => content_nodes(:silent_birth).title
   end
   
+  def test_index_rss
+    get :index, :format => 'rss'
+    assert_response_rss
+    assert_template 'index.rxml'
+    assert assigns(:content_nodes).size > 0
+  end
   
   # Test the list by section action.
-  def test_should_list_by_section
+  def test_list_by_section
     a_section = sections(:pseudoscientific_claims)
     
     get :list_by_section, :section_name => a_section.name

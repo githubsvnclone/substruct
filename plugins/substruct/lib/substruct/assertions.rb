@@ -55,5 +55,41 @@ module Substruct
       get action
       assert_redirected_to redirection_hash
     end
+    
+    # assert_format :iphone
+    def assert_format(format)
+      assert_equal format.to_sym, @request.format.to_sym
+    end
+
+    def assert_response_xml
+      assert_response :success
+      assert_equal 'application/xml; charset=utf-8', @response.headers['type']
+    end
+    
+    def assert_response_rss
+      assert_response :success
+      assert_equal 'application/rss+xml; charset=utf-8', @response.headers['type']
+    end
+    
+    def assert_response_js
+      assert_response :success
+      assert_equal 'text/javascript; charset=utf-8', @response.headers['type']
+    end
+    
+    def assert_response_pdf
+      assert_response :success
+      assert_equal 'application/pdf', @response.headers['type']
+    end
+    
+    def assert_response_json
+      assert_response :success
+      assert_equal 'application/json; charset=utf-8', @response.headers['type']
+    end
+  
+    def assert_response_csv
+      assert_response :success
+      assert_equal 'text/csv', @response.headers['type']
+    end
+    
   end
 end
