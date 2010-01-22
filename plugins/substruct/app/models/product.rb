@@ -133,9 +133,8 @@ class Product < Item
   end
   
   # Is the item active on the site? Is it listed in the store?
-  #
   def is_published?
-	  !self.is_discontinued? || self.quantity > 0
+	  !self.is_discontinued? && self.quantity > 0 && Time.now >= self.date_available
 	end
 	
 	# Is this product new?

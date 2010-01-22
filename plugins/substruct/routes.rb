@@ -39,6 +39,7 @@ connect '/store/show_by_tags/*tags',
 
 # Install the default route as the lowest priority.
 connect ':controller/:action/:id.:format'
+connect ':controller/:action.:format'
 connect ':controller/:action/:id'
 
 

@@ -37,16 +37,27 @@ class StoreController < ApplicationController
   # Our simple store index
   def index
     @title = "Store"
-		@tags = Tag.find_alpha
-		@tag_names = nil
-		@viewing_tags = nil
-
-    @products = Product.paginate(
-      :order => 'name ASC',
-      :conditions => Product::CONDITIONS_AVAILABLE,
-      :page => params[:page],
-      :per_page => 10
-    )
+    respond_to do |format|
+      format.html do
+    		@tags = Tag.find_alpha
+    		@tag_names = nil
+    		@viewing_tags = nil
+        @products = Product.paginate(
+          :order => 'name ASC',
+          :conditions => Product::CONDITIONS_AVAILABLE,
+          :page => params[:page],
+          :per_page => 10
+        )
+      end
+      format.rss do
+        @products = Product.find(
+          :all,
+          :conditions => Product::CONDITIONS_AVAILABLE,
+          :order => "date_available DESC"
+        )
+        render :action => 'index.rxml', :layout => false and return
+      end
+    end
   end
   
   def search

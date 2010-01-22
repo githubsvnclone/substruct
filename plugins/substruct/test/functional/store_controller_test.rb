@@ -30,6 +30,26 @@ class StoreControllerTest < ActionController::TestCase
     assert_not_nil assigns(:tags)
     assert_not_nil assigns(:products)
   end
+  
+  def test_index_rss
+    get :index, :format => 'rss'
+    assert_response_rss
+    assert_template 'index.rxml'
+    assert_equal Product.count, assigns(:products).size
+    assigns(:products).each do |item|
+      assert item.is_published?, item.inspect
+    end
+  end
+  
+  def test_index_rss_products_hidden
+    # Hide one product
+    discontinued_item = items(:uranium_portion)
+    assert discontinued_item.update_attribute(:date_available, Time.now + 1.week)
+    assert !discontinued_item.is_published?
+    # Make sure it doesn't show up on the RSS
+    get :index, :format => 'rss'
+    assert !assigns(:products).include?(discontinued_item)
+  end
 
   # Affiliate code cookie gets written by JS.
   # Ensure it's applied to an order if we have that cookie present.
