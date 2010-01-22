@@ -39,9 +39,9 @@ class StoreController < ApplicationController
     @title = "Store"
     respond_to do |format|
       format.html do
-    		@tags = Tag.find_alpha
-    		@tag_names = nil
-    		@viewing_tags = nil
+        @tags = Tag.find_alpha
+        @tag_names = nil
+        @viewing_tags = nil
         @products = Product.paginate(
           :order => 'name ASC',
           :conditions => Product::CONDITIONS_AVAILABLE,
@@ -77,45 +77,45 @@ class StoreController < ApplicationController
     end
   end
 
-	# Shows products by tag or tags.
-	# Tags are passed in as id #'s separated by commas.
-	#
-	def show_by_tags
-		# Tags are passed in as an array.
-		# Passed into this controller like this:
-		# /store/show_by_tags/tag_one/tag_two/tag_three/...
-		@tag_names = params[:tags]
-		# Generate tag ID list from names
-		tag_ids_array = Array.new
-		for name in @tag_names
-		  temp_tag = Tag.find_by_name(name)
-			if temp_tag then
-				tag_ids_array << temp_tag.id
+  # Shows products by tag or tags.
+  # Tags are passed in as id #'s separated by commas.
+  #
+  def show_by_tags
+    # Tags are passed in as an array.
+    # Passed into this controller like this:
+    # /store/show_by_tags/tag_one/tag_two/tag_three/...
+    @tag_names = params[:tags]
+    # Generate tag ID list from names
+    tag_ids_array = Array.new
+    for name in @tag_names
+      temp_tag = Tag.find_by_name(name)
+      if temp_tag then
+        tag_ids_array << temp_tag.id
       else
         render(:file => "#{RAILS_ROOT}/public/404.html", :status => 404) and return
       end
-		end
-		
-		if tag_ids_array.size == 0
-		  render(:file => "#{RAILS_ROOT}/public/404.html", :status => 404) and return
-		end
-		
+    end
+    
+    if tag_ids_array.size == 0
+      render(:file => "#{RAILS_ROOT}/public/404.html", :status => 404) and return
+    end
+    
     @viewing_tags = Tag.find(tag_ids_array, :order => "parent_id ASC")
-		viewing_tag_names = @viewing_tags.collect { |t| " > #{t.name}"}
-		@title = "Store #{viewing_tag_names}"
-		@tags = Tag.find_related_tags(tag_ids_array)
-		
-		# Paginate products so we don't have a ton of ugly SQL
-		# and conditions in the controller		
-		per_page = 10
+    viewing_tag_names = @viewing_tags.collect { |t| " > #{t.name}"}
+    @title = "Store #{viewing_tag_names}"
+    @tags = Tag.find_related_tags(tag_ids_array)
+    
+    # Paginate products so we don't have a ton of ugly SQL
+    # and conditions in the controller    
+    per_page = 10
     list = Product.find_by_tags(tag_ids_array, true)
     pager = Paginator.new(list, list.size, per_page, params[:page])
     @products = returning WillPaginate::Collection.new(params[:page] || 1, per_page, list.size) do |p|
       p.replace list[pager.current.offset, pager.items_per_page]
     end
-		
-		render :action => 'index'
-	end
+    
+    render :action => 'index'
+  end
 
   # This is a component...
   # Displays a fragment of HTML that shows a product, desc, and "buy now" link
@@ -126,10 +126,10 @@ class StoreController < ApplicationController
     logger.warn("StoreController::display_product is deprecated. Please use the 'product' partial instead.")
     @product = Product.find(:first, :conditions => ["id = ?", params[:id]])
     if (@product.images[0]) then
-			@image = @product.images[0]
-		else
-			@image = nil
-		end
+      @image = @product.images[0]
+    else
+      @image = nil
+    end
     render :layout => false
   end
   
@@ -166,64 +166,64 @@ class StoreController < ApplicationController
     sanitize!
     product = Product.find(params[:id])
     @order.add_product(product)
-		# In substruct.rb
-		redirect_to get_link_to_checkout
+    # In substruct.rb
+    redirect_to get_link_to_checkout
   rescue
     logger.error("[ERROR] - Can't find product for id: #{params[:id]}")
     redirect_to_index("Sorry, you tried to buy a product that we don't carry any longer.")
   end
 
-	# Adds an item to our cart via AJAX
-	#
-	# Returns the cart HTML as a partial to update the view in JS
-	def add_to_cart_ajax
-	  sanitize!
-	  # If variations are present we get that as the ID instead...
-	  if params[:variation]
-	    product = Variation.find(params[:variation])
-	  else
-		  product = Product.find(params[:id])
-		end
-		
-		begin
-		  quantity = params[:quantity].to_int
-		rescue NoMethodError
-		  quantity = (params[:quantity].to_i != 0) ? params[:quantity].to_i : 1
-	  end
-		
-		logger.info "QUANTITY: #{quantity}"
-	  logger.info "PRODUCT QUANTITY: #{product.quantity}"
-	  logger.info "Quantity too much? #{(quantity.to_i > product.quantity.to_i)}"
-	  
-		# Checks quantity against available.
-		if (Preference.find_by_name('store_use_inventory_control').is_true? && quantity > product.quantity.to_i)
-		  logger.info "There's an error adding to the cart..."
-		  render :nothing => true, :status => 400 and return
-		else
-  		@order.add_product(product, quantity)
-  		logger.info "Product added...success"
-  		render :partial => 'cart' and return
-  	end
-	end
+  # Adds an item to our cart via AJAX
+  #
+  # Returns the cart HTML as a partial to update the view in JS
+  def add_to_cart_ajax
+    sanitize!
+    # If variations are present we get that as the ID instead...
+    if params[:variation]
+      product = Variation.find(params[:variation])
+    else
+      product = Product.find(params[:id])
+    end
+    
+    begin
+      quantity = params[:quantity].to_int
+    rescue NoMethodError
+      quantity = (params[:quantity].to_i != 0) ? params[:quantity].to_i : 1
+    end
+    
+    logger.info "QUANTITY: #{quantity}"
+    logger.info "PRODUCT QUANTITY: #{product.quantity}"
+    logger.info "Quantity too much? #{(quantity.to_i > product.quantity.to_i)}"
+    
+    # Checks quantity against available.
+    if (Preference.find_by_name('store_use_inventory_control').is_true? && quantity > product.quantity.to_i)
+      logger.info "There's an error adding to the cart..."
+      render :nothing => true, :status => 400 and return
+    else
+      @order.add_product(product, quantity)
+      logger.info "Product added...success"
+      render :partial => 'cart' and return
+    end
+  end
 
 
-	# Removes one item via AJAX
-	#
-	# Returns the cart HTML as a partial to update the view in JS
-	def remove_from_cart_ajax
-		product = Item.find(params[:id])
-		@order.remove_product(product)
-		render :partial => 'cart'
-	rescue
-		render :text => "There was a problem removing that item. Please refresh this page."
-	end
+  # Removes one item via AJAX
+  #
+  # Returns the cart HTML as a partial to update the view in JS
+  def remove_from_cart_ajax
+    product = Item.find(params[:id])
+    @order.remove_product(product)
+    render :partial => 'cart'
+  rescue
+    render :text => "There was a problem removing that item. Please refresh this page."
+  end
 
-	# Empties the entire cart via ajax...
-	# Again, returns cart HTML via partial
-	def empty_cart_ajax
-		clear_cart_and_order
-		render :partial => 'cart'
-	end
+  # Empties the entire cart via ajax...
+  # Again, returns cart HTML via partial
+  def empty_cart_ajax
+    clear_cart_and_order
+    render :partial => 'cart'
+  end
 
   # Empties the cart out and redirects to index.
   # Removes any order saved to the DB if there is such a thing.
@@ -336,18 +336,18 @@ class StoreController < ApplicationController
         when 4
           @payment_message = %q\
             Your order has been processed at PayPal but we
-	          have not heard back from them yet.  Your order
-			      will be ready to ship as soon as we receive 
-			      confirmation of your payment.
-			    \
-			    clean_order_success()
-	      when 5
-	        @payment_message = "Transaction processed successfully"
+            have not heard back from them yet.  Your order
+            will be ready to ship as soon as we receive 
+            confirmation of your payment.
+          \
           clean_order_success()
-	      else
-	        error_message = "Something went wrong and your transaction failed.<br/>"
-	        error_message << "Please try again or contact us."
-	        redirect_to_checkout(error_message) and return
+        when 5
+          @payment_message = "Transaction processed successfully"
+          clean_order_success()
+        else
+          error_message = "Something went wrong and your transaction failed.<br/>"
+          error_message << "Please try again or contact us."
+          redirect_to_checkout(error_message) and return
         end
     else      
       # Redirect to checkout and allow them to enter info again.
