@@ -13,8 +13,8 @@
 			</colgroup>
 			<tr>
 				<th>Code</th>
-				<th>Name</th>
-				<th># of Orders</th>
+				<th>Contact Name</th>
+				<th>Orders</th>
 			</tr>
 			<% for affil in @affiliates %>
 				<tr class="<%= alternate %>">
@@ -22,7 +22,13 @@
 					<td>
 						<%= "#{affil.first_name} #{affil.last_name}" %>
 					</td>
-					<td class="numeric"><%= link_to(number_with_delimiter(affil.orders.size, ','), :action => 'show_orders', :id => affil) %></td>
+					<td><%= 
+  			    link_to(
+  			      "#{number_with_delimiter(affil.orders.size, ',')} Orders", 
+  			      :action => 'show_orders', 
+  			      :id => affil
+  			    )
+					%></td>
 				</tr>
 			<% end %>
 		</table>

@@ -17,5 +17,15 @@
 </div>
 
 <div id="right">
+  <h1 class="first">Link</h1>
+  <p>
+    You should give this link to your affiliate. They will use it to promote your site and drive sales.
+  </p>
+  <p>
+    <input type="text" value="http://<%= request.env["SERVER_NAME"] %>?affiliate=<%= @affiliate.code %>" class="textInput" size="25" id="affiliate_link_text" />
+    <script language="javascript">
+      $('affiliate_link_text').focus();
+    </script>
+  </p>
 </div>
 <div class="clear">&nbsp</div>
