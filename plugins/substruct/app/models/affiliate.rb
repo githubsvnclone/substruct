@@ -4,10 +4,13 @@ class Affiliate < ActiveRecord::Base
 	# Validation
 	validates_presence_of :code
 	validates_uniqueness_of :code
+	validates_format_of :code,
+	  :with => /^[0-9a-zA-Z_-]+$/,
+	  :message => "Affiliate code must only contain letters or numbers. No spaces or symbols."
 	
 	# Generates a 15 character alphanumeric code
 	# that we use to track affiliates and promotions.
-	def self.generate_code(size=15)
+	def self.generate_code(size=10)
     # characters used to generate affiliate code
     chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890" 
     # create a new record object to satisfy while loop initially
