@@ -223,5 +223,9 @@ LOOKING INTO OTHER OPTIONS!!!
     cut_content = truncate_words(rc, length)
     new_content = sanitize_html(cut_content)
   end
+  
+  def get_affiliate_link(affiliate)
+    "http://#{request.env['SERVER_NAME']}?affiliate=#{affiliate.code}"
+  end
 
 end

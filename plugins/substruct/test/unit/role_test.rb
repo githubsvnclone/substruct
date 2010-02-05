@@ -1,8 +1,7 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class RoleTest < ActiveSupport::TestCase
-  fixtures :roles, :rights
-
+  fixtures :roles, :rights, :users
 
   # Test if a valid role can be created with success.
   def test_should_create_role
@@ -10,7 +9,7 @@ class RoleTest < ActiveSupport::TestCase
     
     a_role.name = "Common User"
     a_role.description = "An user that have few rights."
-    a_role.right_ids = ["", rights(:content_crud).id.to_s]
+    a_role.right_ids = ["", rights(:content_all).id.to_s]
   
     assert a_role.save
   end

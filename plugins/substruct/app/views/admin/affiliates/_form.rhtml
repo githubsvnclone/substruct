@@ -1,10 +1,16 @@
 <div class="padLeft">
 
-  <div style="margin-bottom:10px;">
-  	<label>Code</label>
+	<div class="floatHalf">
+  	<%= make_label('Affiliate Code', true) %>
   	<%= text_field "affiliate", 'code', :maxlength => 20, :size => 30, :class => 'textInput' %>
   	<%= error_message_on("affiliate", :code) %>
   </div>
+  <div class="floatHalf">
+		<%= make_label('Email Address', true) %>
+		<%= text_field "affiliate", 'email_address', :size => 30, :class => 'textInput' %>
+  	<%= error_message_on("affiliate", :email_address) %>
+  </div>
+  <div class="clear">&nbsp;</div>
 
 	<div class="floatHalf">
 		<label>First Name</label>

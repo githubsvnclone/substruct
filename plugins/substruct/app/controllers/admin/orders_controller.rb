@@ -269,9 +269,9 @@ class Admin::OrdersController < Admin::BaseController
     
     case params[:format]
       when 'xml'
-        content = Order.get_xml_for_orders(@orders)
+        content = Order.get_xml_for(@orders)
       when 'csv'
-        content = Order.get_csv_for_orders(@orders)
+        content = Order.get_csv_for(@orders)
     end
     
     directory = File.join(RAILS_ROOT, "public/system/order_files")

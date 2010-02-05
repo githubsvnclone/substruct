@@ -8,3 +8,14 @@ joes_marketing:
   state: CA
   zip: 95111
   email_address: joe@joesmarketing.com
+
+bob_reseller: 
+  code: "bobby_r"
+  first_name: "Bob"
+  last_name: "Reseller"
+  telephone: "999-111-1212"
+  address: 2010 Shady Tree Lane
+  city: San Francisco
+  state: CA
+  zip: 91111
+  email_address: bob@bobsreseller.com

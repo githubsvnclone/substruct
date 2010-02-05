@@ -4,6 +4,7 @@
 		<%= 
 			link_to_unless_current(
 				'Admin Users',
+				:controller => 'users',
 				:action => 'index'
 			)
 		%>
@@ -12,7 +13,17 @@
 		<%= 
 			link_to_unless_current(
 				'Customers',
-				:action => 'customers'
+				:controller => 'customers',
+				:action => 'index'
+			)
+		%>
+	</li>
+	<li>
+		<%= 
+			link_to_unless_current(
+				'Affiliates',
+				:controller => 'affiliates',
+				:action => 'list'
 			)
 		%>
 	</li>

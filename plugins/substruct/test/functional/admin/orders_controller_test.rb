@@ -139,8 +139,8 @@ class Admin::OrdersControllerTest < ActionController::TestCase
     an_order = orders(:santa_next_christmas_order)
     a_month = an_order.created_on.month
 
-    # Test last year.
-    last_year = assigns(:years)[1.year.ago.year.to_s]
+    # Test 2007
+    last_year = assigns(:years)[an_order.created_on.year.to_s]
     last_year[a_month][0] = 1
     last_year[a_month][1] = an_order.product_cost
     last_year[a_month][2] = an_order.tax

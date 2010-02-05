@@ -11,6 +11,7 @@ santa_next_christmas_order:
   order_number: <%= Order.generate_order_number %>
   order_account: santa_account
   order_status_code_id: 5
+  affiliate: joes_marketing
 
 an_order_on_cart: 
   tax: 0.0
@@ -24,6 +25,7 @@ an_order_on_cart:
   order_number: <%= Order.generate_order_number %>
   order_account: santa_account
   order_status_code_id: 1
+  affiliate: joes_marketing
 
 an_order_to_charge: 
   tax: 0.0
@@ -37,7 +39,8 @@ an_order_to_charge:
   order_number: <%= Order.generate_order_number %>
   order_account: santa_account
   order_status_code_id: 2
-  
+  affiliate: joes_marketing
+
 an_order_on_hold_payment_failed: 
   tax: 0.0
   product_cost: 23
@@ -51,7 +54,8 @@ an_order_on_hold_payment_failed:
   order_number: <%= Order.generate_order_number %>
   order_account: santa_account
   order_status_code_id: 3
-  
+  affiliate: joes_marketing
+
 an_order_on_hold_awaiting_payment: 
   tax: 0.0
   product_cost: 91.5
@@ -65,6 +69,7 @@ an_order_on_hold_awaiting_payment:
   order_number: <%= Order.generate_order_number %>
   order_account: santa_account
   order_status_code_id: 4
+  affiliate: joes_marketing
 
 an_order_ordered_paid_shipped: 
   tax: 0.0
@@ -79,6 +84,7 @@ an_order_ordered_paid_shipped:
   order_number: <%= Order.generate_order_number %>
   order_account: santa_account
   order_status_code_id: 6
+  affiliate: joes_marketing
 
 an_order_sent_to_fulfillment: 
   tax: 0.0
@@ -92,6 +98,7 @@ an_order_sent_to_fulfillment:
   order_number: <%= Order.generate_order_number %>
   order_account: santa_account
   order_status_code_id: 7
+  affiliate: joes_marketing
 
 an_order_cancelled: 
   tax: 0.0
@@ -105,6 +112,7 @@ an_order_cancelled:
   order_number: <%= Order.generate_order_number %>
   order_account: santa_account
   order_status_code_id: 8
+  affiliate: joes_marketing
 
 an_order_returned: 
   tax: 0.0
@@ -119,3 +127,4 @@ an_order_returned:
   order_number: <%= Order.generate_order_number %>
   order_account: santa_account
   order_status_code_id: 9
+  affiliate: joes_marketing

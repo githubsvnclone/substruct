@@ -22,7 +22,6 @@ class OrderUser < ActiveRecord::Base
     :order => "wishlist_items.created_on DESC"
   
   validates_presence_of :email_address, :message => ERROR_EMPTY
-	validates_length_of :email_address, :maximum => 255
 	validates_uniqueness_of :email_address, 
 	  :message => %q/
 	    This email address has already been taken in our system.<br\/>
@@ -57,8 +56,7 @@ class OrderUser < ActiveRecord::Base
     user = find(
       :first,
       :conditions => ["email_address = ?", email]
-    )
-    
+    )    
     return nil if !user
     
     if !password.blank? && user.password == password
@@ -86,12 +84,39 @@ class OrderUser < ActiveRecord::Base
     (1..size).collect{|a| chars[rand(chars.size)] }.join
   end
   
+  # Returns a CSV string for customers passed in
+  def self.get_csv_for(list)
+    require 'fastercsv'
+    csv_string = FasterCSV.generate do |csv|
+      # Do header generation 1st
+      csv << [
+        "FirstName", "LastName", "EmailAddress"
+      ]
+      for c in list
+        csv << [c.first_name, c.last_name, c.email_address]
+      end
+    end
+
+    directory = File.join(RAILS_ROOT, "public/system/customers")
+    file_name = Time.now.strftime("Customer_list-%m_%d_%Y_%H-%M")
+    file = "#{file_name}.csv"
+    save_to = "#{directory}/#{file}"
+
+    # make sure we have the directory to write these files to
+    if Dir[directory].empty?
+      FileUtils.mkdir_p(directory)
+    end
+    
+    return csv_string
+  end
+  
   #############################################################################
   # INSTANCE METHODS 
   #############################################################################
   
+  delegate :name, :to => "last_billing_address.nil? ? '[No name given]' : last_billing_address" 
+  
   # Gets the last used billing address for this user.
-  #
   def last_billing_address
     if !self.last_order
       return nil

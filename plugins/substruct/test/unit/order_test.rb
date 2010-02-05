@@ -242,7 +242,7 @@ class OrderTest < ActiveSupport::TestCase
 
   
   # Test if a csv file with a list of orders will be generated.
-  def test_get_csv_for_orders
+  def test_get_csv_for
     order_1 = orders(:santa_next_christmas_order)
 
     # Order with a blank shipping type, just to cover a comparison in the method.
@@ -250,7 +250,7 @@ class OrderTest < ActiveSupport::TestCase
     order_2.order_shipping_type = nil
     
     # Test the CSV.
-    csv_string = Order.get_csv_for_orders([order_1, order_2])
+    csv_string = Order.get_csv_for([order_1, order_2])
     csv_array = FasterCSV.parse(csv_string)
 
     # Test if the header is right.
@@ -307,7 +307,7 @@ class OrderTest < ActiveSupport::TestCase
   
   # Test if a xml file with a list of orders will be generated.
   # TODO: Get rid of the reference to fedex code. 
-  def test_get_xml_for_orders
+  def test_get_xml_for
     order_1 = orders(:santa_next_christmas_order)
 
     # Order with a blank shipping type, just to cover a comparison in the method.
@@ -317,7 +317,7 @@ class OrderTest < ActiveSupport::TestCase
     # Test the XML.
     require 'rexml/document'
     
-    xml = REXML::Document.new(Order.get_xml_for_orders([order_1, order_2]))
+    xml = REXML::Document.new(Order.get_xml_for([order_1, order_2]))
     assert xml.root.name, "orders"
 
     # TODO: For some elements the name don't correspond with the content.
@@ -1094,6 +1094,25 @@ class OrderTest < ActiveSupport::TestCase
     end
 
     assert_equal total, a_cart.total
+  end
+  
+  def test_affiliate_earnings
+    @order.stubs(:total).returns(150.00)
+    @order.expects(:is_payable_to_affiliate?).times(2).returns(true, false)
+    assert_equal 7.50, @order.affiliate_earnings
+    assert_equal 0, @order.affiliate_earnings
+  end
+  
+  def test_is_payable_to_affiliate
+    @order.expects(:order_status_code_id).times(8).returns(1,2,3,4,5,6,7,8)
+    assert !@order.is_payable_to_affiliate?
+    assert !@order.is_payable_to_affiliate?
+    assert !@order.is_payable_to_affiliate?
+    assert !@order.is_payable_to_affiliate?
+    assert !@order.is_payable_to_affiliate?
+    assert @order.is_payable_to_affiliate?
+    assert @order.is_payable_to_affiliate?
+    assert !@order.is_payable_to_affiliate?
   end
 
   # Test if will return the tax cost for the total in the cart.

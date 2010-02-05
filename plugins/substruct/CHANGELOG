@@ -1,6 +1,24 @@
 Substruct Version Changelog and Update Notes
 ===============================================================================
 
+VERSION 1.1 - 02/01/2010
+---------------------------------------
+Added:
+  1. Affiliate tracking 
+    * http://code.google.com/p/substruct/wiki/HelpAffiliates
+    
+Updated:
+  0. Ensured you can run autotest from the vendor/plugins/substruct directory
+    * All tests are passing
+  1. Refactored a lot of the test code. Original tests got the job done, 
+     but were contributed by a novice programmer.
+
+Upgrade steps:
+  1. rake db:migrate:fix_engines_migrations 
+  2. script/generate plugin_migration
+  3. rake db:migrate
+
+
 Version 1.0 FINAL - 09/01/2008
 ---------------------------------------
 Added:
@@ -45,7 +63,7 @@ Upgrade steps:
      Let it do it's thing, it has to encrypt all stored CC #'s
   5. rake rails:update
      ...This will update your JS, boot, and environment files to Rails 2.1.0
-  6. Manually update you environment.rb file to use RAILS_GEM_VERSIOn 2.1.0
+  6. Manually update you environment.rb file to use RAILS_GEM_VERSION 2.1.0
 
 
 Version 1.0a

@@ -33,6 +33,7 @@ class Admin::AffiliatesControllerTest < ActionController::TestCase
     assert_difference "Affiliate.count" do
       post :create,
         :affiliate => {
+          :email_address => 'joe_blow@gmail.com',
           :code => 'abcdef',
           :first_name => 'joe',
           :last_name => 'blow'

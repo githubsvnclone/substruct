@@ -56,54 +56,5 @@ class Admin::UsersController < Admin::BaseController
       redirect_to :action => 'list'
 		end
   end
-  
-  #============================================================================
-  # ACTIONS THAT HAVE TO DO WITH CUSTOMERS
-  #============================================================================
-  
-  # Lists customers in the system.
-  def customers
-    @title = "Customer List"
-    @customers = OrderUser.paginate(
-      :include => ['orders'],
-      :order => "last_name ASC, first_name ASC",
-      :page => params[:page],
-      :per_page => 30
-    )    
-  end
-  
-  # Downloads a list of customers as a CSV file.
-  # Good for exporting to mailing lists, etc.
-  #
-  def download_customers_csv
-    require 'fastercsv'
-    @customers = OrderUser.find(
-      :all
-    )
-    csv_string = FasterCSV.generate do |csv|
-      # Do header generation 1st
-      csv << [
-        "FirstName", "LastName", "EmailAddress"
-      ]
-      for c in @customers
-        csv << [c.first_name, c.last_name, c.email_address]
-      end
-    end
-
-    directory = File.join(RAILS_ROOT, "public/system/customers")
-    file_name = Time.now.strftime("Customer_list-%m_%d_%Y_%H-%M")
-    file = "#{file_name}.csv"
-    save_to = "#{directory}/#{file}"
-
-    # make sure we have the directory to write these files to
-    if Dir[directory].empty?
-      FileUtils.mkdir_p(directory)
-    end    
-
-    # write the file
-    File.open(save_to, "w") { |f| f.write(csv_string)  }
-
-    send_file(save_to, :type => "text/csv")
-  end
-  
+    
 end

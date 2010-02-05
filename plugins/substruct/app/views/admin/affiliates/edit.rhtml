@@ -22,7 +22,7 @@
     You should give this link to your affiliate. They will use it to promote your site and drive sales.
   </p>
   <p>
-    <input type="text" value="http://<%= request.env["SERVER_NAME"] %>?affiliate=<%= @affiliate.code %>" class="textInput" size="25" id="affiliate_link_text" />
+    <input type="text" value="<%= get_affiliate_link(@affiliate) %>" class="textInput" size="25" id="affiliate_link_text" />
     <script language="javascript">
       $('affiliate_link_text').focus();
     </script>

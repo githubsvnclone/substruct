@@ -1,5 +1,5 @@
 <div id="left">
-	<%= render :partial => '/admin/promotions/subnav' %>
+  <%= render :partial => '/admin/users/subnav' %>
 
 	<% if @affiliates.length == 0 then %>
 		<h4>No affiliates have been created.</h4>
@@ -22,13 +22,19 @@
 					<td>
 						<%= "#{affil.first_name} #{affil.last_name}" %>
 					</td>
-					<td><%= 
-  			    link_to(
-  			      "#{number_with_delimiter(affil.orders.size, ',')} Orders", 
-  			      :action => 'show_orders', 
-  			      :id => affil
-  			    )
-					%></td>
+					<td>
+					  <% if affil.orders.size == 0 %>
+      				No orders
+      			<% else %>
+      				<%=
+      					link_to(
+      						"#{affil.orders.size} Order(s)",
+      						:action => 'show_orders',
+      						:id => affil
+      					)
+      				%>
+					  <% end %> 
+  			  </td>
 				</tr>
 			<% end %>
 		</table>

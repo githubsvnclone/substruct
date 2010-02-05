@@ -65,7 +65,6 @@ module SubstructApplicationController
   end
   
   # Used in StoreController and CustomerController
-  #  
   def log_customer_in(customer)
     session[:customer] = customer.id
   end

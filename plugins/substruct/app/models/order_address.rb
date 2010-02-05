@@ -18,15 +18,15 @@ class OrderAddress < ActiveRecord::Base
   validates_length_of :last_name, :maximum => 50
   validates_length_of :address, :maximum => 255
 
-  US_STATES = 	%\AK	AZ CT FL HI IL KY MD MN MT NE NM OH PA SC TX VI WI AL CA DC GA IA  	IN LA  	ME  	MO  	NC  	NH  	NV
-  OK  	PR  	SD  	UT  	VT  	WV  	AR CO DE GU ID KS MA MI MS ND NJ NY OR RI TN VA WA WY\.split( /\W+/ )
+  US_STATES = %\AK AR AZ CT FL HI IL KY MD MN MT NE NM OH PA SC TX VI WI AL CA DC GA IA IN LA ME  	MO NC NH NV OK PR SD UT VT WV CO DE GU ID KS MA MI MS ND NJ NY OR RI TN VA WA WY\.split( /\W+/ )
 
   #Makes sure validation address doesn't allow PO Box or variants
   def validate
-    invalid_strings =
-    ['PO BOX', 'P.O. BOX', 'P.O BOX', 'PO. BOX', 'POBOX',
+    invalid_strings = [
+      'PO BOX', 'P.O. BOX', 'P.O BOX', 'PO. BOX', 'POBOX',
       'P.OBOX', 'P.O.BOX', 'PO.BOX', 'P.BOX', 'PBOX', 'AFO',
-    'A.F.O.', 'APO', 'A.P.O.']
+      'A.F.O.', 'APO', 'A.P.O.'
+    ]
     cap_address = self.address.upcase()
     invalid_strings.each do |string|
       if cap_address.include?(string) then
@@ -43,7 +43,6 @@ class OrderAddress < ActiveRecord::Base
       errors.add(:state, "Please use a US state abbreviation") unless US_STATES.include?(self.state)
     end
   end
-
 
   # Finds the shipping address for a given OrderUser
   def self.find_shipping_address_for_user(user)

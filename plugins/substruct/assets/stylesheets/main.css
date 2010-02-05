@@ -377,6 +377,25 @@ div.listContainer .list {
 	border-top:1px solid #999999;
 }
 
+.list .inner th {
+  font-size: 12px;
+  background-color: transparent;
+  background-image: none;
+  color: #999;
+  text-align: right;
+}
+.list .inner td {
+  font-size: 12px;
+}
+.list .inner td, .list .inner th {
+  padding: 2px 6px;
+  border: 0px;
+}
+
+.list tr.inactive td {
+  color: #999;
+}
+
 /* END TABLE LIST CSS */
 
 *.hover {

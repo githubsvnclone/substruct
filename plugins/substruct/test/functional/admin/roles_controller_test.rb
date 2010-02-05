@@ -40,7 +40,7 @@ class Admin::RolesControllerTest < ActionController::TestCase
     :role => {
       :name => "Common User",
       :description => "An user that have few rights.",
-      :right_ids => ["", rights(:content_crud).id.to_s]
+      :right_ids => ["", rights(:content_all).id.to_s]
     }
     
     # If saved we should be redirected to list. 

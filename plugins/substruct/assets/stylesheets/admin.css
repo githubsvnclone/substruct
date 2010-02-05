@@ -465,6 +465,10 @@ div.listContainer .list {
 	border-top:1px solid #999999;
 }
 
+.list tr.inactive td {
+  color: #999;
+}
+
 /* END TABLE LIST CSS */
 
 *.hover {

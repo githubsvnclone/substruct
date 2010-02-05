@@ -172,7 +172,7 @@ class Order < ActiveRecord::Base
   end
 
 	# Gets a CSV string that represents an order list.
-	def self.get_csv_for_orders(order_list)
+	def self.get_csv_for(order_list)
     require 'fastercsv'
     csv_string = FasterCSV.generate do |csv|
       # Do header generation 1st
@@ -227,7 +227,7 @@ class Order < ActiveRecord::Base
 
 	# Returns an XML string for each order in the order list.
 	# This format is for sending orders to Tony's Fine Foods
-	def self.get_xml_for_orders(order_list)
+	def self.get_xml_for(order_list)
 		xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 		xml << "<orders>\n"
 		for order in order_list
@@ -569,6 +569,22 @@ class Order < ActiveRecord::Base
     logger.debug "SHIPPING COST: #{self.shipping_cost}"
     logger.debug "TAX COST: #{self.tax_cost}"
     self.line_items_total + self.shipping_cost + self.tax_cost
+  end
+  
+  # How much an affiliate would make on this order
+  def affiliate_earnings
+    if self.is_payable_to_affiliate?
+      earnings = self.total * (Affiliate::REVENUE_PERCENTAGE.to_f/100)
+    else
+      earnings = 0
+    end
+    return earnings
+  end
+  
+  # Only pay out for completed / shipped orders.
+  def is_payable_to_affiliate?
+    code_id = self.order_status_code_id
+    return (code_id == 6 || code_id == 7)
   end
   
   # The tax of items if applied.

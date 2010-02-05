@@ -13,6 +13,8 @@ connect 'admin',
   :controller => 'admin/orders',
   :action     => 'index'
 
+connect '/admin/customers/:action.:format', :controller => 'admin/customers'
+
 connect '/blog',
   :controller => 'content_nodes',
   :action     => 'index'
