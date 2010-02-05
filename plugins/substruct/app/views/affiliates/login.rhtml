@@ -14,13 +14,13 @@
 
 			<p>
 				<%= make_label('Affiliate Code', true) %>
-				<input type="password" class="textInput" name="code" size="30" />
+				<input type="text" class="textInput" name="code" size="30" />
 			</p>
 		
 		  <div class="line">&nbsp;</div>
 
 	    <p>
-	      <%= submit_tag "Login", :class => 'button twohundred' %>
+	      <%= submit_tag "Login", :class => 'button twohundred', :disable_with => 'Logging in...' %>
 	      <div class="clear">&nbsp;</div>
 	    </p>
 		
