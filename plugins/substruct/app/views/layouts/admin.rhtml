@@ -46,10 +46,10 @@
 				<%= link_to_section "Products", :controller=>"/admin/products" rescue nil %>
 			</li>
 			<li class="<%= (@cname == 'promotions') ? 'active' : '' %>">
-				<%= link_to_section "Promotions", :controller=>"/admin/promotions" rescue nil %>
+				<%= link_to_section "Promos", :controller=>"/admin/promotions" rescue nil %>
 			</li>
 			<li class="<%= @cname == 'questions' ? 'active' : '' %>">
-				<%= link_to_section "Questions", :controller=>"/admin/questions" rescue nil %>
+				<%= link_to_section "FAQ", :controller=>"/admin/questions" rescue nil %>
 			</li>
 			<li class="<%= @cname == 'content_nodes' ? 'active' : '' %>">
 				<%= link_to_section "Content", :controller=>"/admin/content_nodes" rescue nil %>
