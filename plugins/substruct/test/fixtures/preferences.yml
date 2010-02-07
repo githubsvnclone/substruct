@@ -69,3 +69,11 @@ cc_clear_after_order:
 use_smtp_tls_patch:
   name: use_smtp_tls_patch
   value: "0"
+
+affiliate_paid_order_delay:
+  name: affiliate_paid_order_delay
+  value: "90"
+
+affiliate_revenue_percentage:
+  name: affiliate_revenue_percentage
+  value: 5

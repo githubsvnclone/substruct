@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class AffiliateTest < ActiveSupport::TestCase
-  fixtures :affiliates, :orders
+  fixtures :affiliates, :orders, :preferences
   
   def setup
     @jm = affiliates(:joes_marketing)
@@ -88,7 +88,7 @@ class AffiliateTest < ActiveSupport::TestCase
   end
   
   def test_orders_to_be_paid
-    payment_cutoff_date = Date.today - Affiliate::PAID_ORDER_DELAY.days
+    payment_cutoff_date = Date.today - (Affiliate.get_paid_order_delay).days
     orders = @jm.orders_to_be_paid
     assert orders.size > 0
     orders.each do |o|

@@ -1,3 +1,4 @@
+<% revenue_pct = Affiliate.get_revenue_percentage() %>
 <div id="left">
   <h2><%= @title %></h2>
   <% if @earnings.size == 0 %>
@@ -47,7 +48,7 @@
             <%= number_to_currency(period[:revenue]) %>
           </td>
           <td class="numeric">
-            <%= Affiliate::REVENUE_PERCENTAGE %>%
+            <%= revenue_pct %>%
           </td>
           <td class="numeric">
             <%= number_to_currency(period[:earnings]) %>

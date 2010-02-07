@@ -1,7 +1,5 @@
 class Affiliate < ActiveRecord::Base
   SQL_VALID_ORDER_STATUS = "(order_status_code_id = 6 OR order_status_code_id = 7)"
-  PAID_ORDER_DELAY = 90
-  REVENUE_PERCENTAGE = 5
   # Associations
   has_many :orders
   # Earned orders are valid referred orders.
@@ -11,9 +9,9 @@ class Affiliate < ActiveRecord::Base
     :conditions => SQL_VALID_ORDER_STATUS
   has_many :orders_to_be_paid, 
     :class_name => 'Order', 
-    :conditions => %Q\
+    :conditions => %q\
       #{SQL_VALID_ORDER_STATUS} 
-      AND orders.created_on >= DATE_SUB(CURRENT_DATE(), INTERVAL #{PAID_ORDER_DELAY} DAY)
+      AND orders.created_on >= DATE_SUB(CURRENT_DATE(), INTERVAL #{Affiliate.get_paid_order_delay} DAY)
     \
   # has_many :paid_orders
   # has_many :unpaid_orders
@@ -63,6 +61,17 @@ class Affiliate < ActiveRecord::Base
       :first,
       :conditions => ["email_address = ? AND code = ?", email, code]
     )    
+  end
+  
+  # Defines how long to wait before paying affiliates 
+  # after an order has been processed.
+  def self.get_paid_order_delay
+    Preference.find_by_name('affiliate_paid_order_delay').value.to_i
+  end
+  # Defines what percentage of an order total to pay 
+  # affiliate.
+  def self.get_revenue_percentage
+    Preference.find_by_name('affiliate_revenue_percentage').value.to_f
   end
   
   # INSTANCE METHODS ==========================================================

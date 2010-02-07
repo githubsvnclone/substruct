@@ -1,73 +1,79 @@
---- 
-preference_00010: 
+handling_fee:
   name: store_handling_fee
-  id: 10
-  value: "15.00"
-preference_00011: 
+  value: "0.00"
+
+mail_copy_to:
   name: mail_copy_to
-  id: 11
   value: ""
-preference_00012: 
+
+mail_host:
   name: mail_host
-  id: 12
   value: localhost
-preference_00001: 
-  name: cc_processor
-  id: 1
-  value: Authorize.net
-preference_00002: 
-  name: cc_login
-  id: 2
-  value: ""
-preference_00013: 
+
+mail_port:
   name: mail_port
-  id: 13
   value: "25"
-preference_00014: 
+
+mail_auth_type:
   name: mail_auth_type
-  id: 14
   value: none
-preference_00003: 
-  name: cc_pass
-  id: 3
-  value: ""
-preference_00004: 
-  name: cc_clear_after_order
-  id: 4
-  value: "1"
-preference_00015: 
+
+mail_username:
   name: mail_username
-  id: 15
   value: ""
-preference_00016: 
+
+mail_password:
   name: mail_password
-  id: 16
   value: ""
-preference_00005: 
+
+store_name:
   name: store_name
-  id: 5
   value: Substruct
-preference_00006: 
+
+store_home_country:
   name: store_home_country
-  id: 6
-  value: "1"
-preference_00007: 
+  value: <%= Fixtures.identify(:US) %>
+
+store_show_confirmation:
   name: store_show_confirmation
-  id: 7
   value: "1"
-preference_00008: 
+
+store_use_inventory_control:
   name: store_use_inventory_control
-  id: 8
   value: "1"
-preference_00009: 
+
+store_require_login:
   name: store_require_login
-  id: 9
   value: "0"
-preference_00017: 
+
+store_test_transactions:
   name: store_test_transactions
-  id: 17
   value: "1"
+
+cc_processor:
+  name: cc_processor
+  value: "Authorize.net"
+
+cc_login:
+  name: cc_login
+  value: ""
+
+cc_pass:
+  name: cc_pass
+  value: ""
+
+cc_clear_after_order:
+  name: cc_clear_after_order
+  value: "1"
+
 use_smtp_tls_patch:
   name: use_smtp_tls_patch
-  id: 18
   value: "0"
+
+affiliate_paid_order_delay:
+  name: affiliate_paid_order_delay
+  value: "90"
+
+affiliate_revenue_percentage:
+  name: affiliate_revenue_percentage
+  value: 5
