@@ -1,9 +1,7 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class PaypalControllerTest < ActionController::TestCase
-  fixtures :orders, :order_line_items, :order_addresses, :order_users, :order_shipping_types, :items
-  fixtures :order_accounts, :order_status_codes, :countries, :promotions, :preferences
-
+  fixtures :all
 
   # Test the controller receiving a good IPN notification.
   def test_ipn_receiving_good_data

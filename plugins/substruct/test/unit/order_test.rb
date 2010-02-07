@@ -758,16 +758,19 @@ class OrderTest < ActiveSupport::TestCase
     @order.promotion_code = promo.code
     assert @order.is_discounted?
   end
-  
-  
-  # Test if the contents of the IPN posted back are in conformity 
-  # with what was sent, here the IPN is validated.
-  def test_say_if_matches_ipn
-    setup_new_order_with_items()
     
+  # PAYPAL IPN TESTS ----------------------------------------------------------
+    
+  def setup_test_ipn
+    ActionMailer::Base.delivery_method = :test
+    ActionMailer::Base.perform_deliveries = true
+    ActionMailer::Base.deliveries = []
+    @notes_before = @order.notes.dup
+    # Set a fake fixed transaction id.
+    @txn_id = "3HY99478SV091020H"
     # TODO: Take a look closely how these params are filled in the paypal guides.
     # Create a fake hash to be used as params and to generate the query string.
-    fake_params = {
+    @fake_params = {
       :address_city => "San Jose",
       :address_country => "United States",
       :address_country_code => "US",
@@ -782,7 +785,6 @@ class OrderTest < ActiveSupport::TestCase
       :first_name => "Test",
       :last_name => "User",
       :invoice => @order.order_number,
-      
       :item_name1 => @order.order_line_items[0].name,
       :item_name2 => @order.order_line_items[1].name,
       :item_number1 => "",
@@ -823,123 +825,115 @@ class OrderTest < ActiveSupport::TestCase
       :verify_sign => "AKYASk7fkoMqSjT.TB-8hzZ9riLTAVyg5ho1FZd9XrCkuXZCpp-Q6uEY",
       :memo => "A message."
     }
-   
     # Configure the Paypal store login.
-    assert Preference.save_settings({ "cc_login" => fake_params[:business] })
-
+    assert Preference.save_settings({ "cc_login" => @fake_params[:business] })
     # Create the parameters required by the matches_ipn method.
-    notification = ActiveMerchant::Billing::Integrations::Paypal::Notification.new(fake_params.to_query)
-    complete_params = fake_params.merge({ :action => "ipn", :controller => "paypal" })
-    
-    # Test a call that should succeed.
-    assert Order.matches_ipn(notification, @order, complete_params)
+    @notification = ActiveMerchant::Billing::Integrations::Paypal::Notification.new(@fake_params.to_query)
+    @complete_params = @fake_params.merge({ :action => "ipn", :controller => "paypal" })
+  end
 
-    # Change the parameter mc_gross and it should fail.
+  # Test if the contents of the IPN posted back are in conformity 
+  # with what was sent, here the IPN is validated.
+  def test_matches_ipn_success
+    setup_new_order_with_items()
+    setup_test_ipn()
+
+    assert @order.matches_ipn?(@notification, @complete_params)
+  end
+
+  def test_matches_ipn_fail_mc_gross
+    setup_new_order_with_items()
+    setup_test_ipn()
+    
     wrong_notification = ActiveMerchant::Billing::Integrations::Paypal::Notification.new(
-      fake_params.merge({ :mc_gross => "2.00" }).to_query
+     @fake_params.merge({ :mc_gross => "2.00" }).to_query
     )
-    assert( 
-      !Order.matches_ipn(
-        wrong_notification, @order, complete_params
-      ), 
-      "It should have failed because :mc_gross."
-    )
-
-    # Change the parameter business and it should fail.
     assert(
-      !Order.matches_ipn(
-        notification, @order, complete_params.merge({ :business => "somebody@else" })
-      ), 
-      "It should have failed because :business."
+      !@order.matches_ipn?(wrong_notification, @complete_params), 
+      "Should have failed because :mc_gross."
     )
+  end
 
-    # It should fail if finds another order with the same txn_id.
-    another_order = orders(:santa_next_christmas_order)
-    another_order.auth_transaction_id = fake_params[:txn_id]
-    another_order.save
-    assert !Order.matches_ipn(notification, @order, complete_params), "It should have failed because another order already have this txn_id."
- end
-  
-
-  # Test the method that mark the order with a success status, if everything is fine with the IPN received.
-  # TODO: Should this method really be here?
-  def test_pass_ipn
-    # Setup the mailer.
-    ActionMailer::Base.delivery_method = :test
-    ActionMailer::Base.perform_deliveries = true
-    ActionMailer::Base.deliveries = []
-    initial_mbox_length = ActionMailer::Base.deliveries.length
-
-    notes_before = @order.notes.dup
+  def test_matches_ipn_fail_business_email
+    setup_new_order_with_items()
+    setup_test_ipn()
     
-    # Set a fake fixed transaction id.
-    txn_id = "3HY99478SV091020H"
-    
-    # Pass the order and the fake txn_id.
-    Order.pass_ipn(@order, txn_id)
-    
-    # TODO: The status code is being redefined in this method without need.
-    # It will be redefined again in order.cleanup_successful.
-
-    # Assert the transaction id was saved.
-    assert_equal @order.auth_transaction_id, txn_id
-
-    # A new note should be added.
-    notes_after = @order.notes
-    assert_not_equal notes_before, notes_after
-    
-    # We should have received a mail about that.
-    assert_equal ActionMailer::Base.deliveries.length, initial_mbox_length + 1
-    
-    
-    # Stub the deliver_receipt method to raise an exception.
-    Order.any_instance.stubs(:deliver_receipt).raises('An error!')
-    
-    # Pass the order and the fake txn_id.
-    Order.pass_ipn(@order, txn_id)
-    # We don't need to assert the raise because it will be caugh in pass_ipn.
-
-    # We should NOT have received a mail about that.
-    assert_equal ActionMailer::Base.deliveries.length, initial_mbox_length + 1
+    assert(
+      !@order.matches_ipn?(
+        @notification, 
+        @complete_params.merge({ :business => "somebody@else" })
+      ), 
+      "Should have failed because :business."
+    )
   end
   
-
-  # Test the method that mark the order with a fail status, if something is wrong with the IPN received.
-  # TODO: Should this method really be here?
-  def test_fail_ipn
-    # Setup the mailer.
-    ActionMailer::Base.delivery_method = :test
-    ActionMailer::Base.perform_deliveries = true
-    ActionMailer::Base.deliveries = []
-    initial_mbox_length = ActionMailer::Base.deliveries.length
-
-    notes_before = @order.notes.dup
+  def test_matches_ipn_fail_duplicate_txn_id
+    setup_new_order_with_items()
+    setup_test_ipn()
     
-    # Pass the order.
-    Order.fail_ipn(@order)
+    # It should fail if finds another order with the same txn_id.
+    another_order = orders(:santa_next_christmas_order)
+    another_order.auth_transaction_id = @fake_params[:txn_id]
+    another_order.save
+    assert(
+      !@order.matches_ipn?(@notification, @complete_params), 
+      "Should have failed because another order already have this txn_id."
+    )
+  end
+
+  # Test the method that mark the order with a success status, 
+  # if everything is fine with the IPN received.
+  def test_pass_ipn
+    setup_test_ipn()
+    # Exercise
+    assert_difference "ActionMailer::Base.deliveries.length" do
+      @order.pass_ipn(@txn_id)
+    end
+
+    # Verify
+    assert_equal @order.auth_transaction_id, @txn_id
+    assert_not_equal @notes_before, @order.notes
+  end
+    
+  def test_pass_ipn_raises_error
+    setup_test_ipn()
+    # Stub the deliver_receipt method to raise an exception.
+    Order.any_instance.stubs(:deliver_receipt).raises('An error!')
+    # We don't need to assert the raise because it will be caugh in pass_ipn.
+    # Pass the order and the fake txn_id.
+    assert_no_difference "ActionMailer::Base.deliveries.length" do
+      @order.pass_ipn(@txn_id)
+    end
+  end
+  
+  # Test the method that mark the order with a fail status, 
+  # if something is wrong with the IPN received.
+  def test_fail_ipn
+    setup_test_ipn()
+    
+    # Exercise
+    assert_difference "ActionMailer::Base.deliveries.length" do
+      @order.fail_ipn()
+    end
     
     # TODO: The status code is being redefined in this method without need.
     # It will be redefined again in order.cleanup_failed.
-
-    # A new note should be added.
     notes_after = @order.notes
-    assert_not_equal notes_before, notes_after
-    
-    # We should have received a mail about that.
-    assert_equal ActionMailer::Base.deliveries.length, initial_mbox_length + 1
-
+    assert_not_equal @notes_before, @order.notes
+  end
+  
+  def test_fail_ipn_raises_error
+    setup_test_ipn()
   
     # Stub the deliver_receipt method to raise an exception.
     Order.any_instance.stubs(:deliver_failed).raises('An error!')
     
-    # Pass the order.
-    Order.fail_ipn(@order)
-    # We don't need to assert the raise because it will be caugh in fail_ipn.
-
-    # We should NOT have received a mail about that.
-    assert_equal ActionMailer::Base.deliveries.length, initial_mbox_length + 1
+    assert_no_difference "ActionMailer::Base.deliveries.length" do
+      @order.fail_ipn()
+    end
   end
 
+  # / PAYPAL ------------------------------------------------------------------
 
   #############################################################################
   # CART COMPATIBILITY METHODS

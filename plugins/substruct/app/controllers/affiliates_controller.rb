@@ -22,7 +22,6 @@ class AffiliatesController < ApplicationController
     if request.post?
       if @affiliate = Affiliate.authenticate(params[:email_address], params[:code])
         session[:affiliate] = @affiliate.id
-				flash[:notice]  = "Login successful"
         redirect_back_or_default :action => 'index'
       else
         flash.now[:notice]  = "Login unsuccessful"

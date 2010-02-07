@@ -3,7 +3,6 @@ class PaypalController < ApplicationController
 
   # Handles Instant Payment Notification
   # from PayPal after a purchase.
-  #
   def ipn
     notification = Paypal::Notification.new(request.raw_post)
     order = Order.find_by_order_number(
@@ -13,15 +12,13 @@ class PaypalController < ApplicationController
 
     if notification.acknowledge
       begin
-        if notification.complete? && 
-          Order.matches_ipn(notification, order, params) 
-          Order.pass_ipn(order, params[:txn_id])
+        if notification.complete? && order.matches_ipn?(notification, params) 
+          order.pass_ipn(params[:txn_id])
         else
-          Order.fail_ipn(order)
+          order.fail_ipn()
         end
       rescue => e
-        order.order_status_code_id = 3
-        order.save
+        order.update_attribute(:order_status_code_id, 3)
         raise
       ensure
         order.save
