@@ -7,7 +7,6 @@ class OrderUserTest < ActiveSupport::TestCase
     @santa = order_users(:santa)
     @mustard = order_users(:mustard)
     @new_customer = OrderUser.new(
-      :username => "",
       :email_address => "arthur.dent@whoknowswhere.com",
       :password => "",
       :first_name => "",
