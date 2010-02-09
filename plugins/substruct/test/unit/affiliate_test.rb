@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class AffiliateTest < ActiveSupport::TestCase
-  fixtures :affiliates, :orders, :preferences
+  fixtures :affiliates, :affiliate_payments, :orders, :preferences
   
   def setup
     @jm = affiliates(:joes_marketing)
@@ -22,7 +22,7 @@ class AffiliateTest < ActiveSupport::TestCase
     end
   end
 
-  # VALIDATIONS ---------------------------------------------------------------
+  # VALIDATIONS ===============================================================
   
   def test_invalid_email_address_blank
     @jm.email_address = ''
@@ -93,15 +93,26 @@ class AffiliateTest < ActiveSupport::TestCase
     assert orders.size > 0
     orders.each do |o|
       assert o.created_on >= payment_cutoff_date
+      assert_nil o.affiliate_payment, "Order was associated with AffiliatePayment when it shouldn't have been"
     end
   end
+
+  # CLASS METHODS =============================================================
   
-  # INSTANCE METHODS ----------------------------------------------------------
+  def test_find_unpaid
+    affiliates = Affiliate.find_unpaid()
+    assert affiliates.size > 0
+    affiliates.each do |a|
+      assert a.total_owed > 0, "#{a.name} was included, even though they're not owed anything"
+    end
+  end
   
   def test_authenticate
     assert_kind_of Affiliate, Affiliate.authenticate(@jm.email_address, @jm.code)
     assert_nil Affiliate.authenticate(@jm.email_address, 'WRONG_CODE')
   end
+  
+  # INSTANCE METHODS ==========================================================
   
   def test_get_earning_months
     setup_earning_tests()
@@ -132,6 +143,43 @@ class AffiliateTest < ActiveSupport::TestCase
       assert last_date > period[:start_date]
       last_date = period[:start_date]
     end
+  end
+  
+  def test_total_earnings_this_month
+    assert_kind_of Float, @jm.total_earnings_this_month
+  end
+  
+  def test_total_earnings_this_month_no_orders
+    assert Order.destroy_all
+    assert_equal 0.0, @jm.total_earnings_this_month
+  end
+  
+  def test_amount_paid
+    assert AffiliatePayment.destroy_all
+    assert_equal 0.0, @jm.total_amount_paid
+  end
+  
+  def test_total_owed
+    assert AffiliatePayment.destroy_all
+    assert_nothing_raised do
+      assert_kind_of Float, @jm.total_owed
+    end
+  end
+  
+  def test_name
+    assert @jm.company.blank?
+    assert_equal "#{@jm.first_name} #{@jm.last_name}", @jm.name
+    @jm.company = "Xyz Corp"
+    assert_equal @jm.company, @jm.name
+  end
+  
+  def test_name_no_first_last
+    assert @jm.update_attributes({
+      :first_name => nil,
+      :last_name => nil,
+      :company => nil
+    })
+    assert_nothing_raised { @jm.name }
   end
   
 end

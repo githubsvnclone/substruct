@@ -1,6 +1,17 @@
 <div id="left">
-  <%= render :partial => '/admin/users/subnav' %>
-
+  <h1><%= @title %></h1>
+  
+  <ul class="navigation secondary">
+    <li>
+      <%=
+        link_to(
+          'All Payments List',
+          :action => 'list_payments'
+        )
+      %>
+    </li>
+  </ul>
+  
 	<% if @affiliates.length == 0 then %>
 		<h4>No affiliates have been created.</h4>
 	<% else %>
@@ -9,32 +20,49 @@
 			<colgroup>
 				<col/>
 				<col/>
-				<col style="width:100px;" />
+				<col />
 			</colgroup>
 			<tr>
 				<th>Code</th>
-				<th>Contact Name</th>
-				<th>Orders</th>
+				<th>Name</th>
+				<th>Earned This Month</th>
+				<th>Owed</th>
 			</tr>
 			<% for affil in @affiliates %>
 				<tr class="<%= alternate %>">
 					<td><%= link_to(affil.code, :action => 'edit', :id => affil) %></td>
 					<td>
-						<%= "#{affil.first_name} #{affil.last_name}" %>
+						<%= affil.name %>
 					</td>
-					<td>
-					  <% if affil.orders.size == 0 %>
-      				No orders
-      			<% else %>
-      				<%=
-      					link_to(
-      						"#{affil.orders.size} Order(s)",
-      						:action => 'show_orders',
-      						:id => affil
-      					)
-      				%>
-					  <% end %> 
+  			  <td>
+  			    <%= 
+  			      link_to(
+  			        number_to_currency(affil.total_earnings_this_month),
+  			        :action => 'orders',
+  			        :id => affil.id
+  			      )
+  			    %>
+  			    <br/>
+  			    <%=
+  			      link_to(
+  			        'View all earnings',
+  			        {
+  			          :action => 'earnings',
+  			          :id => affil.id
+  			        },
+  			        :class => 'info'
+  			      )
+  			    %>
   			  </td>
+					<td>
+					  <%= 
+					    link_to(
+					      number_to_currency(affil.total_owed),
+					      :action => 'payments_for_affiliate',
+					      :id => affil.id
+					    )
+					  %>
+					</td>
 				</tr>
 			<% end %>
 		</table>

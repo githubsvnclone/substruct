@@ -85,6 +85,7 @@ an_order_ordered_paid_shipped:
   order_account: santa_account
   order_status_code_id: 6
   affiliate: joes_marketing
+  affiliate_payment: joe_today
 
 an_order_sent_to_fulfillment: 
   tax: 0.0

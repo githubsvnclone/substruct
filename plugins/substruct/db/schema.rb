@@ -9,7 +9,14 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 33) do
+ActiveRecord::Schema.define(:version => 20100208014731) do
+
+  create_table "affiliate_payments", :force => true do |t|
+    t.datetime "created_at"
+    t.integer  "affiliate_id", :limit => 11, :default => 0,   :null => false
+    t.float    "amount",                     :default => 0.0, :null => false
+    t.text     "notes"
+  end
 
   create_table "affiliates", :force => true do |t|
     t.string "code",          :limit => 15, :default => "", :null => false
@@ -21,6 +28,8 @@ ActiveRecord::Schema.define(:version => 33) do
     t.string "state",         :limit => 10
     t.string "zip",           :limit => 10
     t.string "email_address", :limit => 50, :default => "", :null => false
+    t.string "tax_id"
+    t.string "company"
   end
 
   create_table "content_node_types", :force => true do |t|
@@ -137,7 +146,6 @@ ActiveRecord::Schema.define(:version => 33) do
   add_index "order_status_codes", ["name"], :name => "name"
 
   create_table "order_users", :force => true do |t|
-    t.string   "username",      :limit => 50
     t.string   "email_address", :limit => 50, :default => "", :null => false
     t.string   "password",      :limit => 20
     t.datetime "created_on"
@@ -165,6 +173,7 @@ ActiveRecord::Schema.define(:version => 33) do
     t.integer  "billing_address_id",     :limit => 11, :default => 0,   :null => false
     t.integer  "order_account_id",       :limit => 11, :default => 0,   :null => false
     t.integer  "affiliate_id",           :limit => 11, :default => 0,   :null => false
+    t.integer  "affiliate_payment_id",   :limit => 11, :default => 0,   :null => false
   end
 
   add_index "orders", ["order_number"], :name => "order_number"

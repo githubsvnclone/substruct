@@ -2,6 +2,7 @@ class Affiliate < ActiveRecord::Base
   SQL_VALID_ORDER_STATUS = "(order_status_code_id = 6 OR order_status_code_id = 7)"
   # Associations
   has_many :orders
+  has_many :payments, :class_name => 'AffiliatePayment'
   # Earned orders are valid referred orders.
   # The status codes here are 'ordered, paid, shipped' and 'sent to fulfillment'
   has_many :valid_referred_orders, 
@@ -12,6 +13,7 @@ class Affiliate < ActiveRecord::Base
     :conditions => %q\
       #{SQL_VALID_ORDER_STATUS} 
       AND orders.created_on >= DATE_SUB(CURRENT_DATE(), INTERVAL #{Affiliate.get_paid_order_delay} DAY)
+      AND orders.affiliate_payment_id  = 0
     \
   # has_many :paid_orders
   # has_many :unpaid_orders
@@ -27,6 +29,15 @@ class Affiliate < ActiveRecord::Base
 	validates_format_of :email_address,
 	  :with => /^([^@\s]+)@((?:[-a-zA-Z0-9]+\.)+[a-zA-Z]{2,})$/,
 	  :message => "Please enter a valid email address."
+	
+	# CLASS METHODS =============================================================
+	
+	# Finds Affiliates with total_owed > 0
+	# TODO: Make more efficient. Will definitely bog down with
+	# large numbers of affiliates.
+	def self.find_unpaid
+	  find(:all, :include => [:orders]).reject{|a| 0 >=  a.total_owed}
+  end
 	
 	# Generates a 15 character alphanumeric code
 	# that we use to track affiliates and promotions.
@@ -76,11 +87,9 @@ class Affiliate < ActiveRecord::Base
   
   # INSTANCE METHODS ==========================================================
   
-  
-  
   # Gets months where affiliate has referred orders
   def get_earning_months
-    orders = self.valid_referred_orders.find(:all, :select => ['created_on'])
+    orders = self.orders.find(:all, :select => ['created_on'])
     return orders.collect{|o| o.created_on.to_date.beginning_of_month }.uniq
   end
   
@@ -88,19 +97,53 @@ class Affiliate < ActiveRecord::Base
   def get_earnings()
     earnings = []
     self.get_earning_months.each do |month|
-      conds = [
-        "created_on BETWEEN DATE(?) AND DATE(?)", 
-        month.beginning_of_month, month.end_of_month
-      ]
-      orders = self.valid_referred_orders.find(:all, :conditions => conds)
-      earnings << {
-        :start_date => month,
-        :num_total_orders => self.orders.count(:conditions => conds),
-        :num_valid_orders => orders.size,
-        :revenue => orders.inject(0.0){|sum,o| sum + o.total},
-        :earnings => orders.inject(0.0){|sum,o| sum + o.affiliate_earnings}
-      }
+      earnings << self.get_earnings_for_month(month)
     end
     return earnings
   end
+  
+  def get_earnings_for_month(d)
+    conds = [
+      "created_on BETWEEN DATE(?) AND DATE(?)", 
+      d.beginning_of_month, d.end_of_month
+    ]
+    orders = self.valid_referred_orders.find(:all, :conditions => conds)
+    earnings = {
+      :start_date => d,
+      :num_total_orders => self.orders.count(:conditions => conds),
+      :num_valid_orders => orders.size,
+      :revenue => orders.inject(0.0){|sum,o| sum + o.total},
+      :earnings => orders.inject(0.0){|sum,o| sum + o.affiliate_earnings}
+    }
+  end
+  
+  def total_earnings_this_month
+    total = get_earnings_for_month(Date.today.beginning_of_month)[:earnings]
+    total ||= 0.0
+  end
+  
+  def total_earnings
+    self.orders.find(:all).inject(0.0) do |sum,o| 
+      sum + o.affiliate_earnings
+    end 
+  end
+  
+  def total_owed
+    total = -(self.total_amount_paid - self.total_earnings)
+    total ||= 0.0
+  end
+  
+  def total_amount_paid
+    total = self.payments.sum('amount')
+    total ||= 0.0
+  end
+  
+  def name
+    if !self.company.blank?
+      return self.company
+    else
+      return "#{self.first_name} #{self.last_name}"
+    end
+  end
+  
 end

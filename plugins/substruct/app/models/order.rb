@@ -21,6 +21,7 @@ class Order < ActiveRecord::Base
   belongs_to :order_status_code
   belongs_to :promotion
   belongs_to :affiliate
+  belongs_to :affiliate_payment
   
   has_many :downloads, 
     :finder_sql => %q\

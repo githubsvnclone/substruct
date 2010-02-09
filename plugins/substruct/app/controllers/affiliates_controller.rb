@@ -50,7 +50,6 @@ class AffiliatesController < ApplicationController
   end
 
   # Displays earnings made by affiliate.
-  # Defaults to current month. Can view other dates / times.
   def earnings
     @title = "Your Earnings"
     @earnings = @affiliate.get_earnings()

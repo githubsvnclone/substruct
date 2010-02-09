@@ -8,6 +8,11 @@
     		<%= text_field "affiliate", 'email_address', :size => 30, :class => 'textInput' %>
       	<%= error_message_on("affiliate", :email_address) %>
       </div>
+      <div class="floatHalf">
+    		<%= make_label('Company Name') %>
+    		<%= text_field "affiliate", 'company', :size => 30, :class => 'textInput' %>
+      	<%= error_message_on("affiliate", :company) %>
+      </div>
       <div class="clear">&nbsp;</div>
 
     	<div class="floatHalf">
