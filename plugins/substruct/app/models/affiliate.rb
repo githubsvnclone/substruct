@@ -2,7 +2,6 @@ class Affiliate < ActiveRecord::Base
   SQL_VALID_ORDER_STATUS = "(order_status_code_id = 6 OR order_status_code_id = 7)"
   # Associations
   has_many :orders
-  has_many :payments, :class_name => 'AffiliatePayment'
   # Earned orders are valid referred orders.
   # The status codes here are 'ordered, paid, shipped' and 'sent to fulfillment'
   has_many :valid_referred_orders, 
@@ -15,6 +14,9 @@ class Affiliate < ActiveRecord::Base
       AND orders.created_on >= DATE_SUB(CURRENT_DATE(), INTERVAL #{Affiliate.get_paid_order_delay} DAY)
       AND orders.affiliate_payment_id  = 0
     \
+  has_many :payments, 
+    :class_name => 'AffiliatePayment',
+    :dependent => :destroy
   # has_many :paid_orders
   # has_many :unpaid_orders
 	# Validation

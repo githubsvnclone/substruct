@@ -22,6 +22,17 @@ class AffiliateTest < ActiveSupport::TestCase
     end
   end
 
+  # ASSOCIATIONS ==============================================================
+  
+  def test_payments_destroyed
+    payments = @jm.payments.find(:all)
+    assert payments.size > 0
+    assert @jm.destroy
+    payments.each do |p|
+      assert_nil AffiliatePayment.find_by_id(p.id)
+    end
+  end
+
   # VALIDATIONS ===============================================================
   
   def test_invalid_email_address_blank
