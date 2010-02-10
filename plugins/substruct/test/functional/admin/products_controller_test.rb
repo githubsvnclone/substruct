@@ -209,10 +209,8 @@ class Admin::ProductsControllerTest < ActionController::TestCase
     assert_not_nil a_product 
     assert_equal a_product.images.count, 0
 
-    # The signal that the image has problems is a flash message, we need to follow
-    # the redirect to see it.
-    follow_redirect
-    assert_select "div#flash"
+    # The signal that the image has problems is a flash message
+    assert !flash[:notice].blank?
   end
 
 

@@ -1,22 +1,27 @@
 Substruct Version Changelog and Update Notes
 ===============================================================================
 
-VERSION 1.1 - 02/01/2010
+VERSION 1.1 - 02/10/2010
 ---------------------------------------
 Added:
   1. Affiliate tracking & payments
     * http://code.google.com/p/substruct/wiki/HelpAffiliates
     
 Updated:
-  0. Ensured you can run autotest from the vendor/plugins/substruct directory
+  1. Upgraded to Rails 2.1.2 and latest ActiveMerchant plugin
+  2. Ensured you can run autotest from the vendor/plugins/substruct directory
     * All tests are passing
-  1. Refactored a lot of the test code. Original tests got the job done, 
-     but were contributed by a novice programmer.
+  3. Refactored a lot of the test code. Original tests got the job done, 
+     but the style and clarity needed updating.
+     Will be sweeping through these to clean up as needed.
 
 Upgrade steps:
-  1. rake db:migrate:fix_engines_migrations 
-  2. script/generate plugin_migration
-  3. rake db:migrate
+  0. Edit your config/environment.rb file,
+     * Ensure RAILS_GEM_VERSION is set to 2.1.2
+  1. rake rails:update
+  2. rake db:migrate:fix_engines_migrations 
+  3. script/generate plugin_migration
+  4. rake db:migrate
 
 
 Version 1.0 FINAL - 09/01/2008
