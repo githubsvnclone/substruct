@@ -71,6 +71,15 @@ class AffiliatesControllerTest < ActionController::TestCase
     assert_layout 'affiliate'
   end
   
+  def test_payments
+    login_affiliate()
+    get :payments
+    assert_response :success
+    assert_layout 'affiliate'
+    assert_template 'payments'
+    assert_equal @jm.payments.count, assigns(:payments).size
+  end
+  
   def test_terms_conditions
     login_affiliate()
     get :terms_conditions

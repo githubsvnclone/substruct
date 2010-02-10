@@ -9,7 +9,7 @@ class AffiliatesController < ApplicationController
 	before_filter :get_affiliate, 
 	  :only => [
 	    :account, :earnings, :index, :terms_conditions, :promotion_tools,
-	    :orders
+	    :orders, :payments
 	  ]
 
   def index
@@ -53,7 +53,11 @@ class AffiliatesController < ApplicationController
   def earnings
     @title = "Your Earnings"
     @earnings = @affiliate.get_earnings()
-    #@payments = @affiliate.get_payments(params[:start_date], params[:end_date])
+  end
+  
+  def payments
+    @title = "Payments made to you"
+    @payments = @affiliate.payments.find(:all, :order => "id DESC")
   end
   
   # Screen to show terms / conditions of your affiliate program.
