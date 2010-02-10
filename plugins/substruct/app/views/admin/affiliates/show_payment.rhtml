@@ -48,7 +48,7 @@
   <div class="line"></div>
 
   <div style="float:right;">
-      <%= link_to 'Delete This Payment', {:action => 'destroy_payment', :id => @payment}, :class => 'action', :confirm => 'Are you sure?', :post => true %>
+      <%= link_to 'Delete This Payment', {:action => 'destroy_payment', :id => @payment}, :class => 'action', :confirm => 'Are you sure?', :method => :post %>
   </div>
 	<%= submit_tag "Save Notes", :class => 'button hundred', :id => 'add_note_button' %>
 

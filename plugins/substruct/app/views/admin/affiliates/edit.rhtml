@@ -6,7 +6,7 @@
 		<div class="line">&nbsp;</div>
 
 		<div style="float:right;">
-			<%= link_to 'Delete This Affiliate', {:action => 'destroy', :id => @affiliate}, :class => 'action', :confirm => 'Are you sure?', :post => true %>
+			<%= link_to 'Delete This Affiliate', {:action => 'destroy', :id => @affiliate.id}, :class => 'action', :confirm => 'Are you sure?', :method => :post %>
 		</div>
 		<p>
 			<%= submit_tag "Save This Affiliate", :class => 'button hundred' %>

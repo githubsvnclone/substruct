@@ -53,6 +53,7 @@ class Admin::AffiliatesController < Admin::BaseController
   # Deletes an affiliate
   def destroy
     @affiliate.destroy
+    flash[:notice] = "Affiliate deleted successfully"
     redirect_to :action => 'list'
   end
 
