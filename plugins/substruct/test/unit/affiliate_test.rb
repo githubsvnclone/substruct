@@ -118,9 +118,22 @@ class AffiliateTest < ActiveSupport::TestCase
     end
   end
   
+  def test_find_unpaid_disabled
+    assert Affiliate.find_unpaid().size > 0
+    assert Affiliate.update_all("is_enabled = 0")
+    assert_equal 0, Affiliate.find_unpaid.size
+  end
+  
   def test_authenticate
     assert_kind_of Affiliate, Affiliate.authenticate(@jm.email_address, @jm.code)
     assert_nil Affiliate.authenticate(@jm.email_address, 'WRONG_CODE')
+  end
+  
+  def test_authenticate_disabled
+    assert @jm.is_enabled?
+    assert_kind_of Affiliate, Affiliate.authenticate(@jm.email_address, @jm.code)
+    assert @jm.update_attribute(:is_enabled, false)
+    assert_nil Affiliate.authenticate(@jm.email_address, @jm.code)
   end
   
   # INSTANCE METHODS ==========================================================

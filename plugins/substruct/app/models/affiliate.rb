@@ -38,7 +38,12 @@ class Affiliate < ActiveRecord::Base
 	# TODO: Make more efficient. Will definitely bog down with
 	# large numbers of affiliates.
 	def self.find_unpaid
-	  find(:all, :include => [:orders]).reject{|a| 0 >=  a.total_owed}
+	  affiliates = find(
+	    :all, 
+	    :conditions => ["is_enabled = ?", true],
+	    :include => [:orders]
+	  )
+	  affiliates.reject{|a| 0 >=  a.total_owed}
   end
 	
 	# Generates a 15 character alphanumeric code
@@ -72,8 +77,11 @@ class Affiliate < ActiveRecord::Base
   def self.authenticate(email, code)
     find(
       :first,
-      :conditions => ["email_address = ? AND code = ?", email, code]
-    )    
+      :conditions => [
+        "email_address = ? AND code = ? AND is_enabled = ?", 
+        email, code, true
+      ]
+    )
   end
   
   # Defines how long to wait before paying affiliates 

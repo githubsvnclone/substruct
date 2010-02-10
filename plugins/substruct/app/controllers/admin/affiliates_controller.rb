@@ -19,10 +19,11 @@ class Admin::AffiliatesController < Admin::BaseController
 
   def list
     @title = "Affiliate List"
-    @affiliates = Affiliate.find(:all, :order => 'code ASC')
+    @affiliates = Affiliate.find(
+      :all, :order => 'created_at DESC'
+    )
   end
 
-  # Creates a content node
   def new
     @title = "Creating New Affiliate"
     @affiliate = Affiliate.new
@@ -118,7 +119,11 @@ class Admin::AffiliatesController < Admin::BaseController
   def make_payments
     @payments = AffiliatePayment.new_for_all_unpaid
     if request.get?
-      @title = "Create payments for these affiliates?"
+      if @payments.size > 0
+        @title = "Create payments for these affiliates?"
+      else
+        @title = "No payments to create"
+      end
     elsif request.post?
       @title = "Affiliate Payments Recorded"
       @payments.each do |p| 

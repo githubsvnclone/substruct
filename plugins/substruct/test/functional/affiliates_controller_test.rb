@@ -11,6 +11,26 @@ class AffiliatesControllerTest < ActionController::TestCase
     @request.session[:affiliate] = @jm.id
   end
 
+  def test_sign_up
+    get :sign_up
+    assert_response :success
+    assert_layout 'affiliate'
+    assert_template 'sign_up'
+  end
+  
+  def test_sign_up_success
+    assert_difference 'Affiliate.count' do
+      post :sign_up,
+        :affiliate => {
+          :code => Affiliate.generate_code,
+          :email_address => 'youngbob@extrarainbow.com'
+        }
+    end
+    assert_redirected_to '/'
+    assert !flash[:notice].blank?
+    assert !Affiliate.find(:last).is_enabled?
+  end
+
   def test_login
     get :login
     assert_response :success

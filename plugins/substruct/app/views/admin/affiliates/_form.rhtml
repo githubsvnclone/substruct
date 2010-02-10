@@ -1,4 +1,23 @@
 <div class="padLeft">
+  <h2>Approval Status</h2>
+  <div style="margin-bottom:10px;">
+    <p>
+      <label class="inline" style="margin-right:10px;">
+        <%= radio_button :affiliate, :is_enabled, true %> Enabled
+      </label>
+      <label class="inline">
+        <%= radio_button :affiliate, :is_enabled, false %> Disabled
+      </label>
+    </p>
+    <p class="info">
+      Disabled affiliates can not login
+      and will not be eligible to receive earnings or payments.
+    </p>
+  </div>
+  
+  <div class="clear line"></div>
+
+  <h2>Information</h2>
 
 	<div class="floatHalf">
   	<%= make_label('Affiliate Code', true) %>

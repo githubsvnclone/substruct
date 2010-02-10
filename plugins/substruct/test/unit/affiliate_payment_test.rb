@@ -44,10 +44,15 @@ class AffiliatePaymentTest < ActiveSupport::TestCase
   def test_new_for_affiliate_nothing_owed
     affil = affiliates(:bob_reseller)
     assert_equal 0, affil.total_owed
-    # Exercise
-    p = AffiliatePayment.new_for(affil)
-    # Verify
-    assert_nil p
+    # Exercise / Verify
+    assert_nil AffiliatePayment.new_for(affil)
+  end
+  
+  # Disabled affiliates not eligible for payments
+  def test_new_for_affiliate_disabled
+    assert @affil.total_owed > 0
+    assert @affil.update_attribute(:is_enabled, false)
+    assert_nil AffiliatePayment.new_for(@affil)
   end
 
   def test_new_for_all_unpaid
@@ -59,6 +64,13 @@ class AffiliatePaymentTest < ActiveSupport::TestCase
       assert p.new_record?
       assert_not_nil p.created_at
     end
+  end
+  
+  # Disabled affiliates not eligible for payments
+  def test_new_for_all_unpaid_disabled
+    assert Affiliate.update_all("is_enabled = 0")
+    payments = AffiliatePayment.new_for_all_unpaid
+    assert_equal 0, payments.size
   end
   
   def test_get_csv_for

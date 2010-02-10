@@ -5,7 +5,7 @@ class AffiliatesController < ApplicationController
 
 	# Check permissions for everything on within side.
   before_filter :login_required,
-	  :except => [:login]
+	  :except => [:login, :sign_up]
 	before_filter :get_affiliate, 
 	  :only => [
 	    :account, :earnings, :index, :terms_conditions, :promotion_tools,
@@ -33,6 +33,21 @@ class AffiliatesController < ApplicationController
     session[:affiliate] = nil
     flash[:notice] = "You've been logged out as an affiliate."
     redirect_to :action => 'login' and return
+  end
+  
+  def sign_up
+    @title = "Affiliate application"
+    @affiliate = Affiliate.new(:code => Affiliate.generate_code)
+    if request.post?
+      @affiliate.attributes = params[:affiliate]
+      if @affiliate.save
+        flash[:notice] = "Your affiliate application was received successfully."
+        redirect_to '/' and return
+      else
+        flash[:notice] = "There was a problem processing your application.<br/>Please see the fields below."
+        render and return
+      end
+    end
   end
   
   # Account details

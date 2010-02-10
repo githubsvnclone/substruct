@@ -8,7 +8,9 @@ class AffiliatePayment < ActiveRecord::Base
 	
 	# Makes single payment for an Affiliate
 	def self.new_for(affil)
-	  return nil if affil.total_owed == 0
+	  if affil.total_owed == 0 || !affil.is_enabled?
+	    return nil 
+    end
 	  p = self.new(
 	    :affiliate => affil,
 	    :amount => affil.total_owed,
@@ -24,7 +26,8 @@ class AffiliatePayment < ActiveRecord::Base
     payments = []
     affiliates = Affiliate.find_unpaid()
     affiliates.each do |a|
-      payments << AffiliatePayment.new_for(a)
+      p = AffiliatePayment.new_for(a)
+      payments << p unless p.nil?
     end
     return payments
   end

@@ -25,14 +25,24 @@
 			<tr>
 				<th>Code</th>
 				<th>Name</th>
+				<th>Affiliate Since</th>
 				<th>Earned This Month</th>
 				<th>Owed</th>
 			</tr>
 			<% for affil in @affiliates %>
-				<tr class="<%= alternate %>">
-					<td><%= link_to(affil.code, :action => 'edit', :id => affil) %></td>
+				<tr class="<%= alternate %> <%= affil.is_enabled? ? '' : 'inactive' %>">
+					<td>
+            <%= link_to(affil.code, :action => 'edit', :id => affil) %>
+            <% if !affil.is_enabled? %>
+						  <br/>
+						  <span class="info">DISABLED</span>
+						<% end %>
+          </td>
 					<td>
 						<%= affil.name %>
+					</td>
+					<td>
+					  <%= affil.created_at.strftime("%m/%d/%Y") %>
 					</td>
   			  <td>
   			    <%= 
@@ -55,13 +65,17 @@
   			    %>
   			  </td>
 					<td>
-					  <%= 
-					    link_to(
-					      number_to_currency(affil.total_owed),
-					      :action => 'payments_for_affiliate',
-					      :id => affil.id
-					    )
-					  %>
+					  <% if affil.is_enabled? %>
+  					  <%= 
+  					    link_to(
+  					      number_to_currency(affil.total_owed),
+  					      :action => 'payments_for_affiliate',
+  					      :id => affil.id
+  					    )
+  					  %>
+  					<% else %>
+  					  N/A
+					  <% end %>
 					</td>
 				</tr>
 			<% end %>
