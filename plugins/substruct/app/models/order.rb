@@ -484,7 +484,7 @@ class Order < ActiveRecord::Base
   # How much an affiliate would make on this order
   def affiliate_earnings
     if self.is_payable_to_affiliate?
-      earnings = self.total * (Affiliate.get_revenue_percentage.to_f/100)
+      earnings = self.line_items_total * (Affiliate.get_revenue_percentage.to_f/100)
     else
       earnings = 0
     end

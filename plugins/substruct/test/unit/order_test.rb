@@ -1091,9 +1091,12 @@ class OrderTest < ActiveSupport::TestCase
   end
   
   def test_affiliate_earnings
-    @order.stubs(:total).returns(150.00)
+    @order.stubs(:line_items_total).returns(100)
+    @order.stubs(:shipping_cost).returns(20)
+    @order.stubs(:tax_cost).returns(50)
+    expected = @order.line_items_total * (Affiliate.get_revenue_percentage.to_f/100)
     @order.expects(:is_payable_to_affiliate?).times(2).returns(true, false)
-    assert_equal 7.50, @order.affiliate_earnings
+    assert_equal expected, @order.affiliate_earnings
     assert_equal 0, @order.affiliate_earnings
   end
   
