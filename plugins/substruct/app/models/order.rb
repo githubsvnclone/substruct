@@ -478,7 +478,7 @@ class Order < ActiveRecord::Base
     logger.debug "LINE ITEMS TOTAL: #{self.line_items_total}"
     logger.debug "SHIPPING COST: #{self.shipping_cost}"
     logger.debug "TAX COST: #{self.tax_cost}"
-    self.line_items_total + self.shipping_cost + self.tax_cost
+    (self.line_items_total + self.shipping_cost + self.tax_cost).round(2)
   end
   
   # How much an affiliate would make on this order
@@ -500,7 +500,7 @@ class Order < ActiveRecord::Base
   # The tax of items if applied.
   #
   def tax_cost
-    (self.line_items_total) * (self.tax/100)
+    ((self.line_items_total) * (self.tax/100.0)).round(2)
   end
 
   def name

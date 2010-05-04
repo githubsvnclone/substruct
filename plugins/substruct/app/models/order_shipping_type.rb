@@ -55,7 +55,7 @@ class OrderShippingType < ActiveRecord::Base
       price = proper_weight.price if proper_weight
     end
     
-    self.calculated_price = price + Preference.find_by_name('store_handling_fee').value.to_f
+    self.calculated_price = price.to_f.round(2) + Preference.find_by_name('store_handling_fee').value.to_f
   end
   
   # Sets weight variations from attribute list.

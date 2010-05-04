@@ -15,3 +15,9 @@ ups_worldwide:
   name: UPS Worldwide Expedited (International Only)
   is_domestic: 0
   price: 50.00
+
+ups_non_rounded_number:
+  code: UPN
+  name: UPS non rounded
+  is_domestic: 1
+  price: 50.001

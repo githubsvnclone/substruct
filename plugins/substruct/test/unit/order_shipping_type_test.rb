@@ -89,7 +89,7 @@ class OrderShippingTypeTest < ActiveSupport::TestCase
   # Test if a list of domestic shipments ordered by price can be obtained.
   def test_should_get_domestic
     OrderShippingType.get_domestic
-    assert_equal order_shipping_types(:ups_ground, :ups_xp_critical), OrderShippingType.get_domestic
+    assert_equal order_shipping_types(:ups_ground, :ups_xp_critical, :ups_non_rounded_number), OrderShippingType.get_domestic
   end
 
 
@@ -112,7 +112,12 @@ class OrderShippingTypeTest < ActiveSupport::TestCase
     # of the weight variation.
     assert_equal an_ups_ground.calculate_price(1.0), a_shipping_weight.price
   end
-
+  
+  # Test if it rounds appropriately.
+  def test_should_round_prices
+    non_rounded = order_shipping_types(:ups_non_rounded_number)
+    assert_equal(50, non_rounded.calculate_price(0))
+  end
 
   # TODO: Theres no reason to have this method.
   # Test if wights can be associated and disassociated.

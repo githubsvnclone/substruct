@@ -419,6 +419,14 @@ class OrderTest < ActiveSupport::TestCase
     assert_equal @order.has_line_item?(new_order.order_line_items.find_by_name(items(:small_stuff).name).id), false
   end
   
+  # Test that we round to the cent for costs
+  def test_round_totals
+    # tax, total want to be rounded
+    @order.tax = 0.068
+    assert_equal @order.tax_cost, 0.88
+    assert_equal 1326.38, @order.total
+  end
+  
   
   # Test an order to see if it will correctly say how many products it have in a line item.
   # TODO: The comment about how to use this method and how it is really being used are different.
