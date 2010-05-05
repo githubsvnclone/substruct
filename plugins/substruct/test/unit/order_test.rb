@@ -339,6 +339,22 @@ class OrderTest < ActiveSupport::TestCase
     assert_equal @o.promotion_line_item.name, promo.description
   end
   
+  def test_promotion_code_nil
+    setup_new_order()
+    assert @o.promotion.nil?
+    assert_equal nil, @o.promotion_code
+  end
+  
+  def test_promotion_code_exists
+    # Setup
+    promo = promotions(:percent_rebate)
+    setup_new_order()
+    # Exercise
+    @o.promotion_code = promo.code
+    assert @o.save
+    assert_equal promo.code, @o.promotion_code
+  end
+  
   # Test if the current status of an order will be shown with success.
   def test_status
     assert_equal @order.status, order_status_codes(:ordered_paid_to_ship).name
@@ -986,10 +1002,10 @@ class OrderTest < ActiveSupport::TestCase
   
   def test_affiliate_code_setter_invalid
     fake_code = 'bogus_affiliate_code'
+    @order.expects(:promotion_code=).with(fake_code)
     @order.affiliate_code = fake_code
     # Verify
-    assert @order.affiliate.nil?
-    assert_equal fake_code, @order.promotion_code
+    assert @order.affiliate.nil?, @order.affiliate.inspect
   end
   
   def test_affiliate_code_setter_nil
@@ -998,11 +1014,11 @@ class OrderTest < ActiveSupport::TestCase
   
   def test_affiliate_code_setter_valid
     affil = affiliates(:joes_marketing)
+    @order.expects(:promotion_code=).with(affil.code)
     @order.affiliate_code = affil.code
     # Verify
     assert @order.save
     assert_equal affil.code, @order.affiliate_code
-    assert_equal affil.code, @order.promotion_code
     assert_equal affil, @order.affiliate
   end
 

@@ -47,8 +47,6 @@ class Order < ActiveRecord::Base
       )
     \
 
-  attr_reader :promotion_code
-  attr_reader :affiliate_code
   attr_reader :new_notes
 
   # VALIDATION ================================================================
@@ -290,11 +288,11 @@ class Order < ActiveRecord::Base
   # This can add discounts to the order or add items.
   # Returns silently and doesn't add the promo if something is wrong.
   def promotion_code=(code)
-    @promotion_code = code
+    sanitized_code = code.strip unless code.blank?
     # Find promotion based on code entered
     promo = Promotion.find(
       :first,
-      :conditions => ["code = ?", @promotion_code]
+      :conditions => ["code = ?", sanitized_code]
     )
     # No promo code? Not active? No deal...
     return if !promo || !promo.is_active?
@@ -345,6 +343,13 @@ class Order < ActiveRecord::Base
     self.order_line_items << oli
   end
 
+  def promotion_code
+    if self.promotion
+      return self.promotion.code
+    else
+      return nil
+    end
+  end
 
   # If affiliate_code is filled in, this tries to find 
   # a matching Affiliate and fill in affiliate_id.
@@ -354,13 +359,19 @@ class Order < ActiveRecord::Base
   # It also attempts to set promotion code.
   def affiliate_code=(code='')
     sanitized_code = code.strip unless code.blank?
-    @affiliate_code = self.promotion_code = sanitized_code
-    #self.promotion_code = sanitized_code
-    unless self.affiliate_code.blank?
-      self.affiliate = Affiliate.find_by_code(self.affiliate_code)
+    self.promotion_code = sanitized_code
+    unless sanitized_code.blank?
+      self.affiliate = Affiliate.find_by_code(sanitized_code)
     end
-  end  
+  end
   
+  def affiliate_code
+    if self.affiliate
+      return self.affiliate.code
+    else
+      return nil
+    end
+  end
   
   # Adds a new order note from the edit page.
   # We display notes as read-only, so we only have to use a text field
