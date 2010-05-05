@@ -69,10 +69,27 @@ class Order < ActiveRecord::Base
     return true
   end
   
+  def before_save
+    set_product_cost
+    cleanup_promotion
+  end
+  
   # Sets product cost based on line items total before a save.
-  before_save :set_product_cost
   def set_product_cost
     self.product_cost = self.line_items_total
+    return true
+  end
+  
+  # Ensures that customers can't apply discounts, then remove items
+  # and still have those discounts applied.
+  def cleanup_promotion
+    # Only applies when order is in certain states, like CART.
+    cart_status = OrderStatusCode.find_by_name('CART')
+    return true unless self.order_status_code == cart_status
+
+    if self.promotion && !self.should_promotion_be_applied?(self.promotion)
+      self.remove_promotion
+    end
     return true
   end
   
@@ -284,6 +301,42 @@ class Order < ActiveRecord::Base
 
   # INSTANCE METHODS ==========================================================
 
+  # Removes promotion from object in memory and stored in database.
+  #
+  # This is necessary because we call it before saves, along with using it
+  # as a callback and when removing items.
+  def remove_promotion
+    # Don't allow more than one promotion?
+    # This destroys any line items created previously.
+    if self.promotion_line_item
+      self.order_line_items.delete(self.promotion_line_item)
+    end
+    self.promotion = nil
+    # Update db without callback being fired
+    unless self.new_record?
+      Order.update(self.id, {:promotion_id => 0})
+    end
+  end
+  
+  # Should a promotion be applied to this order?
+  # Happens when applying new promotions, and checking old ones already
+  # applied.
+  def should_promotion_be_applied?(promo)
+    unless promo && promo.is_active?
+      return false
+    else
+      if promo.minimum_cart_value
+        cart_min_passed = (self.line_items_total(false) >= promo.minimum_cart_value)
+        return cart_min_passed
+      end
+      if promo.discount_type == Promotion::TYPES['Buy [n] get 1 free']
+        buy_n_item = self.order_line_items.detect { |i| i.item_id == promo.item_id }
+        return buy_n_item && buy_n_item.quantity >= promo.discount_amount.to_i
+      end
+      return true
+    end
+  end
+
   # Modifies the order based on any promotion codes passed in.
   # This can add discounts to the order or add items.
   # Returns silently and doesn't add the promo if something is wrong.
@@ -294,20 +347,12 @@ class Order < ActiveRecord::Base
       :first,
       :conditions => ["code = ?", sanitized_code]
     )
-    # No promo code? Not active? No deal...
-    return if !promo || !promo.is_active?
-
-    # Don't allow more than one promotion?
-    # This destroys any line items created previously.
-    self.order_line_items.delete(self.promotion_line_item) if self.promotion_line_item
+    return unless self.should_promotion_be_applied?(promo)
     
-    # Make sure it's valid to add
-    if promo.minimum_cart_value
-      return if promo.minimum_cart_value > self.line_items_total
-    end
-    logger.info "PROMO MIN CART VALUE PASSED"
-    
-    # Assign proper promotion ID
+    # Clear any previous promotions & items
+    self.remove_promotion()
+        
+    # Assign proper promotion
     self.promotion = promo
     
     # Add any line items necessary from promotion.
@@ -319,25 +364,24 @@ class Order < ActiveRecord::Base
     
     # Figure out how to apply the promotion
     case promo.discount_type
-      # Dollars
-      when 0 then
+      when Promotion::TYPES['Dollars'] then
         oli.quantity = 1
         oli.unit_price = -promo.discount_amount
-      #
-      # Percent
-      when 1 then
+      when Promotion::TYPES['Percent of total order'] then
         oli.quantity = 1
-        oli.unit_price = -(self.line_items_total * (promo.discount_amount/100))
-      #
-      # Buy N get 1 free
-      when 2 then
-        item = self.order_line_items.detect { |i| i.item_id == promo.item_id }
-        if item && item.quantity >= promo.discount_amount.to_i
-          oli.quantity = item.quantity / promo.discount_amount.to_i
-          logger.info "ITEM QUANTITY #{oli.quantity}"
-        else
-          return
-        end
+        oli.unit_price = -(self.line_items_total(false) * (promo.discount_amount/100))
+      when Promotion::TYPES['Buy [n] get 1 free'] then
+        # Check for this is performed in "should_promotion_be_applied?"
+        buy_n_item = self.order_line_items.detect { |i| i.item_id == promo.item_id }
+        oli.quantity = buy_n_item.quantity / promo.discount_amount.to_i
+        logger.info "ITEM QUANTITY #{oli.quantity}"
+      else
+        return
+    end
+
+    # Ensure discount can't be more than order total.
+    if -oli.unit_price >= self.total
+      oli.unit_price = -self.line_items_total(false)
     end
     
     self.order_line_items << oli
@@ -430,6 +474,7 @@ class Order < ActiveRecord::Base
         self.order_line_items.delete(item)
       end
     end
+    self.cleanup_promotion
   end
   
   # Compatibility for CART.
@@ -581,9 +626,13 @@ class Order < ActiveRecord::Base
   end
 
   # Grabs the total amount of all line items associated with this order
-  def line_items_total
+  def line_items_total(include_promo_items=true)
     total = 0
+    promo_item = self.promotion_line_item
     for item in self.order_line_items
+      if !include_promo_items
+        next if item == promo_item
+      end
       total += item.total
     end
     return total

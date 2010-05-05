@@ -157,54 +157,33 @@ class StoreController < ApplicationController
   end
 
 
-  # Adds an item to the cart, then redirects to checkout
-  #
-  # This is the old way of doing things before the AJAX cart.
-  #
-  # Left in if someone would like to use it instead.
+  before_filter :get_product_from_params, :only => [:add_to_cart, :add_to_cart_ajax]
   def add_to_cart
     sanitize!
-    product = Product.find(params[:id])
-    @order.add_product(product)
-    # In substruct.rb
-    redirect_to get_link_to_checkout
-  rescue
-    logger.error("[ERROR] - Can't find product for id: #{params[:id]}")
-    redirect_to_index("Sorry, you tried to buy a product that we don't carry any longer.")
-  end
 
-  # Adds an item to our cart via AJAX
-  #
-  # Returns the cart HTML as a partial to update the view in JS
-  def add_to_cart_ajax
-    sanitize!
-    # If variations are present we get that as the ID instead...
-    if params[:variation]
-      product = Variation.find(params[:variation])
-    else
-      product = Product.find(params[:id])
-    end
-    
-    begin
-      quantity = params[:quantity].to_int
-    rescue NoMethodError
-      quantity = (params[:quantity].to_i != 0) ? params[:quantity].to_i : 1
-    end
-    
-    logger.info "QUANTITY: #{quantity}"
-    logger.info "PRODUCT QUANTITY: #{product.quantity}"
-    logger.info "Quantity too much? #{(quantity.to_i > product.quantity.to_i)}"
+    logger.info "QUANTITY: #{@quantity}"
+    logger.info "PRODUCT QUANTITY: #{@product.quantity}"
+    logger.info "Quantity too much? #{(@quantity.to_i > @product.quantity.to_i)}"
     
     # Checks quantity against available.
-    if (Preference.find_by_name('store_use_inventory_control').is_true? && quantity > product.quantity.to_i)
+    if (Preference.find_by_name('store_use_inventory_control').is_true? && @quantity > @product.quantity.to_i)
       logger.info "There's an error adding to the cart..."
-      render :nothing => true, :status => 400 and return
+      respond_to do |format|
+        format.html { render(:file => "#{RAILS_ROOT}/public/404.html", :status => 404) and return}
+        format.js { render :nothing => true, :status => 400 and return }
+      end
     else
-      @order.add_product(product, quantity)
+      @order.add_product(@product, @quantity)
       logger.info "Product added...success"
-      render :partial => 'cart' and return
+      respond_to do |format|
+        format.html { redirect_to get_link_to_checkout and return }
+        format.js { render :partial => 'cart' and return }
+      end
     end
   end
+  # We used to have 2 methods to do this but it was not DRY at all.
+  # This NEEDS to stay for backwards compatibility.
+  alias_method :add_to_cart_ajax, :add_to_cart
 
 
   # Removes one item via AJAX
@@ -363,6 +342,23 @@ class StoreController < ApplicationController
   # PRIVATE METHODS 
   #############################################################################
   private
+  
+    # Allows us to pass in a variation on an item, or fall back to
+    # id. This is essential for the radio controls that select a variation
+    # on an item on the item page
+    def get_product_from_params
+      unless @product = Item.find_by_id(params[:variation] || params[:id])
+        logger.error("[ERROR] - Can't find product for id: #{params[:id]}")
+        redirect_to_index("Sorry, you tried to buy a product that we don't carry any longer.")
+        return false
+      end    
+      
+      begin
+        @quantity = params[:quantity].to_int
+      rescue NoMethodError
+        @quantity = (params[:quantity].to_i != 0) ? params[:quantity].to_i : 1
+      end
+    end
   
     # Prepares store variables necessary for ordering, etc.
     def prep_store_vars

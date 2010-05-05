@@ -377,10 +377,9 @@ class StoreControllerTest < ActionController::TestCase
       }
     )
     assert_response :success
-    assert_select "div#flash" do
-      assert_select "div", :text => /There were some problems with the information you entered/
-    end
+    assert_template 'checkout'
     assert_layout 'checkout'
+    assert flash[:notice].include?('There were some problems with the information you entered')
   end
   
   
@@ -589,9 +588,8 @@ class StoreControllerTest < ActionController::TestCase
     }
     
     assert_response :success
-    assert_select "div#flash" do
-      assert_select "div", :text => /There were some problems with the information you entered/
-    end
+    assert_template 'checkout'
+    assert flash[:notice].include?('There were some problems with the information you entered')
   end
   
   def test_cant_checkout_with_empty_cart

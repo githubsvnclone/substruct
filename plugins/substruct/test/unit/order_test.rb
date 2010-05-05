@@ -42,7 +42,12 @@ class OrderTest < ActiveSupport::TestCase
     setup_new_order()
     @o.order_line_items << @li
     @o.order_line_items << @li_2
-    assert @o.save    
+    assert @o.save
+    # Save the total value before set any promotion.
+    @totals = {
+      :order => @o.total,
+      :line_items => @o.line_items_total
+    }
   end
   
   def test_associations
@@ -111,52 +116,92 @@ class OrderTest < ActiveSupport::TestCase
     assert_equal @o.reload.product_cost, oli.total
   end
 
-
-
-  # TODO: The method doesn't do only what its name says.
-  # TODO: Why log every time a new OrderLineItem is created?
-  # TODO: oli.item_id = promo.item_id is an ugly hack, setting an order item to empty in some situations.
-  # The problem of using the order total value is that it varies at different stages of the flow
-  # if a shipping service was already choosed it will be different, executing the checkout, choosing a
-  # shipping service, coming back adding another product and doing checkout again it will be different
-  # etc.
-  def test_set_promo_code_fixed_rebate
+  # PROMOTIONS ----------------------------------------------------------------
+  
+  # Test if the line item that represents a promotion is returned if present.
+  # FIXME: This method doesn't find the promotion line item if the promotion has an associated item (get 1 free promotions).
+  def test_promotion_line_item
     # Setup
+    promo = promotions(:percent_rebate)
     setup_new_order()
-    promo = promotions(:fixed_rebate)
-    @o.promotion_code = promo.code
     # Exercise
+    @o.promotion_code = promo.code
     assert @o.save
     # Verify
-    assert_equal @o.total, @totals[:order] - promo.discount_amount, "Fixed rebate verification error."
+    assert_equal @o.promotion_line_item.name, promo.description
+  end
+  
+  def test_promotion_code_nil
+    setup_new_order()
+    assert @o.promotion.nil?
+    assert_equal nil, @o.promotion_code
+  end
+  
+  def test_promotion_code_exists
+    # Setup
+    promo = promotions(:percent_rebate)
+    setup_new_order()
+    # Exercise
+    @o.promotion_code = promo.code
+    assert @o.save
+    assert_equal promo.code, @o.promotion_code
+  end
+
+  # TODO: oli.item_id = promo.item_id is an ugly hack, 
+  #       setting an order item to empty in some situations.
+  def test_set_promo_code_fixed_rebate
+    # Setup
+    setup_new_order_with_items()
+    promo = promotions(:fixed_rebate)
+    # Exercise
+    @o.promotion_code = promo.code
+    assert @o.save
+    assert_equal promo, @o.promotion
+    # Verify
+    expected_total = @totals[:order] - promo.discount_amount
+    assert_equal(
+      expected_total.round(2),
+      @o.total, 
+      "Fixed rebate verification error."
+    )
   end
     
   def test_set_promo_code_percent_rebate
     # Setup
-    setup_new_order()
+    setup_new_order_with_items()
     promo = promotions(:percent_rebate)
-    @o.promotion_code = promo.code
     # Exercise
+    @o.promotion_code = promo.code
     assert @o.save
+    assert_equal promo, @o.promotion
     # Verify
-    assert_equal @o.total, @totals[:order] - (@totals[:line_items] * (promo.discount_amount/100)), "Percent rebate verification error."
+    expected_total = @totals[:order] - (@totals[:line_items] * (promo.discount_amount/100))
+    assert_equal(
+      expected_total.round(2),
+      @o.total, 
+      "Percent rebate verification error."
+    )
   end
 
   # Test a fixed rebate with a minimum cart value
   def test_set_promo_code_fixed_min_value
     # Setup
-    setup_new_order()
-    promo = promotions(:minimum_rebate)
-    @li.quantity = 1000
-    @o.order_line_items << @li
-    assert @o.save
-    @totals[:order] = @o.total
-    assert @totals[:order] >= promo.minimum_cart_value
-    @o.promotion_code = promo.code
+    setup_new_order_with_items()    
+    @promo = promotions(:minimum_rebate)
+    assert @totals[:order] >= @promo.minimum_cart_value
     # Exercise
+    assert @o.should_promotion_be_applied?(@promo)
+    @o.promotion_code = @promo.code
     assert @o.save
+    @o.reload
+    assert_equal @promo, @o.promotion
     # Verify
-    assert_equal @o.total, @totals[:order] - promo.discount_amount, "Fixed rebate with minimum cart value verification error."
+    expected_total = @totals[:order] - @promo.discount_amount
+    assert_equal(
+      expected_total.round(2), 
+      @o.total, 
+      "Fixed rebate with minimum cart value verification error."
+    )
   end
   
   def test_set_promo_code_buy_one_get_one_free
@@ -179,6 +224,37 @@ class OrderTest < ActiveSupport::TestCase
     assert_not_equal @o.order_line_items.find_by_name(@li.name), @o.order_line_items.find_by_name(promo.description)
   end
 
+  
+  # Promotions applied when order has multiple items should
+  # be reverted if the threshold ever drops below minimum value.
+  def test_promo_code_minimum_bug
+    test_set_promo_code_fixed_min_value()
+    # Remove expensive item
+    assert @o.order_line_items.delete(@li_2)
+    assert @promo.minimum_cart_value > @o.total
+    assert @o.save
+    # Verify
+    @o.reload
+    assert_nil @o.promotion
+    assert_equal 1, @o.order_line_items.size
+    assert @o.order_line_items.include?(@li)
+  end
+  
+  # Ensure that promotions can't offset the order so much
+  # that the balance becomes negative.
+  def test_promo_code_negative_value_bug
+    # Setup  / preverify
+    promo = promotions(:fixed_rebate)
+    promo_discount = 5000.00
+    assert promo.update_attribute(:discount_amount, promo_discount)
+    setup_new_order_with_items()
+    assert promo.discount_amount > @o.total
+    # Exercise
+    @o.promotion_code = promo.code
+    assert @o.save
+    # Verify
+    assert @o.total >= 0, "Order total was: #{@o.total}"
+  end
 
   # Test if it will properly delete a previous promotion before apply a new one.
   def test_delete_previous_promotion_line_item
@@ -202,6 +278,92 @@ class OrderTest < ActiveSupport::TestCase
     # Assert the previous promotion is NOT there.
     assert_equal @o.order_line_items.find_by_name(a_fixed_rebate.description), nil, "The fixed rebate is still there."
   end
+  
+  def test_remove_promotion
+    setup_new_order_with_items()
+    promo = promotions(:fixed_rebate)
+    @o.promotion_code = promo.code
+    assert @o.save
+    assert_kind_of OrderLineItem, @o.promotion_line_item
+    # Exercise
+    @o.remove_promotion
+    # Verify
+    @o.reload
+    assert_nil @o.promotion
+    assert_nil @o.promotion_line_item
+  end
+  
+  def test_should_promotion_be_applied_expired
+    setup_new_order()
+    promo = promotions(:old_rebate)
+    assert !promo.is_active?
+    assert !@o.should_promotion_be_applied?(promo)
+  end
+  
+  def test_should_promotion_be_applied_not_expired
+    setup_new_order()
+    promo = promotions(:old_rebate)
+    promo.stubs(:is_active?).returns(true)
+    assert @o.should_promotion_be_applied?(promo)
+  end
+  
+  def test_should_promotion_be_applied_buy_n_get_free
+    setup_new_order()
+    promo = promotions(:eat_more_stuff)
+    assert_equal @li.item, promo.item
+    assert @o.order_line_items.empty?
+    # Shouldnt be applied yet. No items on the order
+    assert !@o.should_promotion_be_applied?(promo)
+    # Add the item to the order
+    @o.order_line_items << @li
+    # Now it's ok to apply the promotion
+    assert @o.should_promotion_be_applied?(promo)
+  end
+  
+  def test_should_promotion_be_applied_min_cart_value
+    setup_new_order_with_items()    
+    @promo = promotions(:minimum_rebate)
+    assert @totals[:order] >= @promo.minimum_cart_value
+    # Exercise
+    assert @o.should_promotion_be_applied?(@promo)
+    @o.order_line_items.delete(@li_2)
+    # Verify
+    assert !@o.should_promotion_be_applied?(@promo)
+  end
+  
+  # Orders that have been placed & finished will still fire the 
+  # cleanup_promotion callback. Need to skip it so promotions
+  # don't get accidentally removed later on.
+  def test_cleanup_promotion_order_finished
+    # Setup - add promotion and complete order
+    setup_new_order_with_items()
+    promo = promotions(:fixed_rebate)
+    @o.promotion_code = promo.code
+    @o.order_status_code = order_status_codes(:ordered_paid_to_ship)
+    assert @o.save
+    
+    # Now expire the promo
+    assert promo.update_attributes({
+      :start => Date.today - 2.weeks,
+      :end => Date.today - 1.week
+    })
+    promo.reload
+    @o.reload
+    
+    # Update something on the order, like an admin would.
+    # Maybe we shipped out the order and changed the status code.
+    @o.order_status_code = order_status_codes(:sent_to_fulfillment)
+    assert !@o.should_promotion_be_applied?(promo)
+    assert @o.save
+    
+    @o.reload
+    
+    # Check to see if promotion is still applied (it should be!)
+    assert_equal promo, @o.promotion
+    assert_kind_of OrderLineItem, @o.promotion_line_item
+  end
+
+  # END PROMOTIONS ------------------------------------------------------------
 
   
   # Test if orders can found using the search method.
@@ -325,35 +487,6 @@ class OrderTest < ActiveSupport::TestCase
   end
 
   # INSTANCE METHODS ==========================================================
-  
-  # Test if the line item that represents a promotion is returned if present.
-  # FIXME: This method doesn't find the promotion line item if the promotion has an associated item (get 1 free promotions).
-  def test_promotion_line_item
-    # Setup
-    promo = promotions(:percent_rebate)
-    setup_new_order()
-    # Exercise
-    @o.promotion_code = promo.code
-    assert @o.save
-    # Verify
-    assert_equal @o.promotion_line_item.name, promo.description
-  end
-  
-  def test_promotion_code_nil
-    setup_new_order()
-    assert @o.promotion.nil?
-    assert_equal nil, @o.promotion_code
-  end
-  
-  def test_promotion_code_exists
-    # Setup
-    promo = promotions(:percent_rebate)
-    setup_new_order()
-    # Exercise
-    @o.promotion_code = promo.code
-    assert @o.save
-    assert_equal promo.code, @o.promotion_code
-  end
   
   # Test if the current status of an order will be shown with success.
   def test_status
@@ -1049,21 +1182,26 @@ class OrderTest < ActiveSupport::TestCase
 
   # Test if a product can be removed from the cart.
   def test_remove_product
-    a_cart = Order.new
-    a_cart.add_product(items(:red_lightsaber), 2)
-    a_cart.add_product(items(:blue_lightsaber), 2)
-    assert_equal a_cart.items.length, 2
+    o = Order.new
+    o.expects(:cleanup_promotion).times(4)
+    o.add_product(items(:red_lightsaber), 2)
+    o.add_product(items(:blue_lightsaber), 2)
+    assert_equal o.items.length, 2
+
     # When not specified a quantity all units from the product will be removed.
-    a_cart.remove_product(items(:blue_lightsaber))
-    assert_equal a_cart.items.length, 1
+    o.remove_product(items(:blue_lightsaber))
+    assert_equal o.items.length, 1
+
     # When specified a quantity, just these units from the product will be removed.
-    a_cart.remove_product(items(:red_lightsaber), 1)
-    assert_equal a_cart.items.length, 1
+    o.remove_product(items(:red_lightsaber), 1)
+    assert_equal o.items.length, 1
+
     # It should not be empty.
-    assert !a_cart.empty?
+    assert !o.empty?
+
     # Now it should be empty.
-    a_cart.remove_product(items(:red_lightsaber), 1)
-    assert a_cart.empty?
+    o.remove_product(items(:red_lightsaber), 1)
+    assert o.empty?
   end
 
 
