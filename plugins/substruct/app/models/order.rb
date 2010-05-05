@@ -325,6 +325,16 @@ class Order < ActiveRecord::Base
     unless promo && promo.is_active?
       return false
     else
+      # If the order has no items, or just has the promotion line item
+      # applied - remove it. We shouldn't be giving discounts to orders
+      # with no items at all. Doesn't make sense.
+      if (
+        self.order_line_items.size == 0 || 
+        (self.order_line_items.size == 1 && self.promotion_line_item)
+      )
+        return false
+      end
+        
       if promo.minimum_cart_value
         cart_min_passed = (self.line_items_total(false) >= promo.minimum_cart_value)
         return cart_min_passed

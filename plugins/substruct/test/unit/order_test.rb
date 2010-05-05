@@ -123,10 +123,11 @@ class OrderTest < ActiveSupport::TestCase
   def test_promotion_line_item
     # Setup
     promo = promotions(:percent_rebate)
-    setup_new_order()
+    setup_new_order_with_items()
     # Exercise
     @o.promotion_code = promo.code
     assert @o.save
+    assert_kind_of Promotion, @o.promotion
     # Verify
     assert_equal @o.promotion_line_item.name, promo.description
   end
@@ -140,7 +141,7 @@ class OrderTest < ActiveSupport::TestCase
   def test_promotion_code_exists
     # Setup
     promo = promotions(:percent_rebate)
-    setup_new_order()
+    setup_new_order_with_items()
     # Exercise
     @o.promotion_code = promo.code
     assert @o.save
@@ -301,7 +302,7 @@ class OrderTest < ActiveSupport::TestCase
   end
   
   def test_should_promotion_be_applied_not_expired
-    setup_new_order()
+    setup_new_order_with_items()
     promo = promotions(:old_rebate)
     promo.stubs(:is_active?).returns(true)
     assert @o.should_promotion_be_applied?(promo)
@@ -361,6 +362,22 @@ class OrderTest < ActiveSupport::TestCase
     # Check to see if promotion is still applied (it should be!)
     assert_equal promo, @o.promotion
     assert_kind_of OrderLineItem, @o.promotion_line_item
+  end
+  
+  
+  def test_cleanup_order_no_items
+    setup_new_order_with_items()
+    promo = promotions(:fixed_rebate)
+    @o.promotion_code = promo.code
+    assert @o.save
+    # Remove items
+    @o.remove_product(@li.item)
+    @o.remove_product(@li_2.item)
+    # Verify
+    @o.reload
+    assert_equal 0, @o.order_line_items.count, @o.order_line_items.inspect
+    assert_nil @o.promotion
+    assert_nil @o.promotion_line_item
   end
 
   # END PROMOTIONS ------------------------------------------------------------
