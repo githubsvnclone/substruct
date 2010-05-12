@@ -294,6 +294,25 @@ class OrderTest < ActiveSupport::TestCase
     assert_nil @o.promotion_line_item
   end
   
+  # If for some unforseen reason multiple promotion items get added this
+  # ensures we remove them all when removing a promotion.
+  def test_remove_promotion_multiple_items
+    setup_new_order_with_items()
+    promo = promotions(:fixed_rebate)
+    @o.promotion_code = promo.code
+    assert @o.save
+    assert_kind_of OrderLineItem, @o.promotion_line_item
+    # Add dupe line item.
+    dupe_item = @o.promotion_line_item.clone
+    @o.order_line_items << dupe_item
+    assert_equal 2, @o.order_line_items.count(
+      :conditions => ["name = ?", @o.promotion.description]
+    )
+    # Remove
+    @o.remove_promotion()
+    assert_nil @o.promotion_line_item
+  end
+  
   def test_should_promotion_be_applied_expired
     setup_new_order()
     promo = promotions(:old_rebate)

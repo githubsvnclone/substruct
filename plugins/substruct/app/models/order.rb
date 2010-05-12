@@ -308,7 +308,7 @@ class Order < ActiveRecord::Base
   def remove_promotion
     # Don't allow more than one promotion?
     # This destroys any line items created previously.
-    if self.promotion_line_item
+    while self.promotion_line_item
       self.order_line_items.delete(self.promotion_line_item)
     end
     self.promotion = nil
