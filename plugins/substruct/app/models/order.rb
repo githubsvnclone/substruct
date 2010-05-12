@@ -319,8 +319,11 @@ class Order < ActiveRecord::Base
   end
   
   # Should a promotion be applied to this order?
+  #
   # Happens when applying new promotions, and checking old ones already
   # applied.
+  #
+  # COULD BE CALLED SHOULD_BE_REMOVED AS WELL.
   def should_promotion_be_applied?(promo)
     unless promo && promo.is_active?
       return false
@@ -357,6 +360,10 @@ class Order < ActiveRecord::Base
       :first,
       :conditions => ["code = ?", sanitized_code]
     )
+    # Don't apply the same promotion multiple times.
+    return false if self.promotion == promo
+    # Don't add the above line to "should_be_applied"
+    # as that method also determines if a promo should be REMOVED.
     return unless self.should_promotion_be_applied?(promo)
     
     # Clear any previous promotions & items
@@ -394,7 +401,9 @@ class Order < ActiveRecord::Base
       oli.unit_price = -self.line_items_total(false)
     end
     
-    self.order_line_items << oli
+    if self.promotion_line_item.nil? && !self.order_line_items.include?(oli)
+      self.order_line_items << oli
+    end
   end
 
   def promotion_code
@@ -526,7 +535,7 @@ class Order < ActiveRecord::Base
   # Shortcut to find order_line_item for a promotion that has been applied.
   def promotion_line_item
     if self.promotion
-      return self.order_line_items.find_by_name(self.promotion.description)
+      return self.order_line_items.detect{|li| li.name == self.promotion.description}
     else
       return nil
     end

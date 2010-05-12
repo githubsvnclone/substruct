@@ -18,7 +18,6 @@ class PromotionCheckoutTest < ActionController::IntegrationTest
     assert_equal assigns(:order).items.length, 1
     
     perform_successful_checkout()
-    assert_redirected_to :action => 'select_shipping_method'
     follow_redirect!
     assert_nil assigns(:order).promotion, "Promotion applied when it shouldn't have been."
   end
@@ -43,7 +42,6 @@ class PromotionCheckoutTest < ActionController::IntegrationTest
     
     # FILL OUT CHECKOUT FORM SUCCESSFULLY
     perform_successful_checkout()
-    assert_redirected_to :action => 'select_shipping_method'
     follow_redirect!
     
     # ENSURE PROMO IS APPLIED
@@ -63,11 +61,11 @@ class PromotionCheckoutTest < ActionController::IntegrationTest
   end
   
   def test_double_promo_bug
-    get 'store'
-    assert_response :success
+    @promo.update_attribute(:minimum_cart_value, @expensive_item.price-1)
     
     # ADD ITEMS TO CART
-    add_items_to_cart()
+    xml_http_request(:post, 'store/add_to_cart_ajax', {:id => @expensive_item.id})
+    assert_response :success
     
     # FILL OUT FORM UNSUCCESSFULLY WITH PROMO APPLIED
     perform_unsuccessful_checkout()
@@ -104,6 +102,8 @@ class PromotionCheckoutTest < ActionController::IntegrationTest
           }
         }
       )
+      assert_response :success
+      assert !flash.now[:notice].blank?
     end
   
     # Check out with a promo code.
@@ -126,6 +126,7 @@ class PromotionCheckoutTest < ActionController::IntegrationTest
           }
         }
       )
+      assert_redirected_to :action => 'select_shipping_method'
     end
 
     # Adds items to cart in order to meet the minimum value required by 
